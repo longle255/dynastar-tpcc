@@ -1,0 +1,232 @@
+{
+  "latency_estimation_sample": 10,
+  "deliver_optimistic_fast": false,
+  "acceptor_sequences": [
+    {
+      "acceptors": [
+        0,
+        1
+      ],
+      "ensemble_id": 0,
+      "id": 0,
+      "coordinator_writes": true
+    },
+    {
+      "acceptors": [
+        3,
+        4
+      ],
+      "ensemble_id": 1,
+      "id": 1,
+      "coordinator_writes": true
+    },
+    {
+      "acceptors": [
+        6,
+        7
+      ],
+      "ensemble_id": 2,
+      "id": 2,
+      "coordinator_writes": true
+    },
+    {
+      "acceptors": [
+        9,
+        10
+      ],
+      "ensemble_id": 3,
+      "id": 3,
+      "coordinator_writes": true
+    }
+  ],
+  "groups": [
+    {
+      "group_id": 1
+    },
+    {
+      "group_id": 2
+    },
+    {
+      "group_id": 3
+    }
+  ],
+  "latency_estimation_max": 1,
+  "group_members": [
+    {
+      "group": 1,
+      "rmcast_port": 52012,
+      "pid": 12,
+      "host": "127.0.0.1",
+      "rmcast_address": "127.0.0.1",
+      "port": 51012
+    },
+    {
+      "group": 1,
+      "rmcast_port": 52013,
+      "pid": 13,
+      "host": "127.0.0.1",
+      "rmcast_address": "127.0.0.1",
+      "port": 51013
+    },
+    {
+      "group": 2,
+      "rmcast_port": 52014,
+      "pid": 14,
+      "host": "127.0.0.1",
+      "rmcast_address": "127.0.0.1",
+      "port": 51014
+    },
+    {
+      "group": 2,
+      "rmcast_port": 52015,
+      "pid": 15,
+      "host": "127.0.0.1",
+      "rmcast_address": "127.0.0.1",
+      "port": 51015
+    },
+    {
+      "group": 3,
+      "rmcast_port": 52016,
+      "pid": 16,
+      "host": "127.0.0.1",
+      "rmcast_address": "127.0.0.1",
+      "port": 51016
+    },
+    {
+      "group": 3,
+      "rmcast_port": 52017,
+      "pid": 17,
+      "host": "127.0.0.1",
+      "rmcast_address": "127.0.0.1",
+      "port": 51017
+    }
+  ],
+  "deliver_conservative": true,
+  "batch_size_threshold_bytes": 30000,
+  "deliver_optimistic_uniform": false,
+  "batch_time_threshold_ms": 50,
+  "batching_enabled": true,
+  "rmcast_agent_class": "SimpleReliableMulticastAgent",
+  "agent_class": "RidgeMulticastAgent",
+  "delta_null_messages_ms": 5,
+  "ensemble_processes": [
+    {
+      "role": "coordinator",
+      "host": "127.0.0.1",
+      "pid": 0,
+      "ensemble": 0,
+      "port": 50000
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 1,
+      "ensemble": 0,
+      "port": 50001
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 2,
+      "ensemble": 0,
+      "port": 50002
+    },
+    {
+      "role": "coordinator",
+      "host": "127.0.0.1",
+      "pid": 3,
+      "ensemble": 1,
+      "port": 50003
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 4,
+      "ensemble": 1,
+      "port": 50004
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 5,
+      "ensemble": 1,
+      "port": 50005
+    },
+    {
+      "role": "coordinator",
+      "host": "127.0.0.1",
+      "pid": 6,
+      "ensemble": 2,
+      "port": 50006
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 7,
+      "ensemble": 2,
+      "port": 50007
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 8,
+      "ensemble": 2,
+      "port": 50008
+    },
+    {
+      "role": "coordinator",
+      "host": "127.0.0.1",
+      "pid": 9,
+      "ensemble": 3,
+      "port": 50009
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 10,
+      "ensemble": 3,
+      "port": 50010
+    },
+    {
+      "role": "acceptor",
+      "host": "127.0.0.1",
+      "pid": 11,
+      "ensemble": 3,
+      "port": 50011
+    }
+  ],
+  "direct_fast": false,
+  "latency_estimation_devs": 0,
+  "ensembles": [
+    {
+      "learner_broadcast_mode": "DYNAMIC",
+      "ensemble_id": 0,
+      "destination_groups": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "learner_broadcast_mode": "DYNAMIC",
+      "ensemble_id": 1,
+      "destination_groups": [
+        1
+      ]
+    },
+    {
+      "learner_broadcast_mode": "DYNAMIC",
+      "ensemble_id": 2,
+      "destination_groups": [
+        2
+      ]
+    },
+    {
+      "learner_broadcast_mode": "DYNAMIC",
+      "ensemble_id": 3,
+      "destination_groups": [
+        3
+      ]
+    }
+  ]
+}

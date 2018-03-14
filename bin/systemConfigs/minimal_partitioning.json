@@ -1,0 +1,25 @@
+{
+  "partitions": [
+    {
+      "id": 1,
+      "servers": [
+        21
+      ],
+      "type": "PARTITION"
+    },
+    {
+      "id": 2,
+      "servers": [
+        22
+      ],
+      "type": "PARTITION"
+    },
+    {
+      "id": 3,
+      "servers": [
+        23
+      ],
+      "type": "ORACLE"
+    }
+  ]
+}

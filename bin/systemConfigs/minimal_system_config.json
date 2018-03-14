@@ -1,0 +1,149 @@
+{
+  "agent_class": "RidgeMulticastAgent",
+  "rmcast_agent_class" : "SimpleReliableMulticastAgent",
+  "batch_size_threshold_bytes": 30,
+  "batch_time_threshold_ms": 0,
+  "delta_null_messages_ms": 1,
+  "deliver_conservative": true,
+  "deliver_optimistic_uniform": false,
+  "deliver_optimistic_fast": false,
+  "direct_fast": false,
+  "latency_estimation_sample": 5,
+  "latency_estimation_devs": 0,
+  "latency_estimation_max": 0,
+  "batching_enabled": false,
+  "groups": [
+    {
+      "group_id": 1
+    },
+    {
+      "group_id": 2
+    },
+    {
+      "group_id": 3
+    }
+  ],
+  "ensembles": [
+    {
+      "ensemble_id": 0,
+      "learner_broadcast_mode": "DYNAMIC",
+      "destination_groups": [
+        1
+      ]
+    },
+    {
+      "ensemble_id": 1,
+      "learner_broadcast_mode": "DYNAMIC",
+      "destination_groups": [
+        2
+      ]
+    },
+    {
+      "ensemble_id": 2,
+      "learner_broadcast_mode": "DYNAMIC",
+      "destination_groups": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "ensemble_id": 3,
+      "learner_broadcast_mode": "DYNAMIC",
+      "destination_groups": [
+        3
+      ]
+    }
+  ],
+  "ensemble_processes": [
+    {
+      "role": "coordinator",
+      "pid": 0,
+      "ensemble": 0,
+      "host": "localhost",
+      "port": 50000
+    },
+    {
+      "role": "coordinator",
+      "pid": 2,
+      "ensemble": 1,
+      "host": "localhost",
+      "port": 50003
+    },
+    {
+      "role": "coordinator",
+      "pid": 4,
+      "ensemble": 2,
+      "host": "localhost",
+      "port": 50006
+    },
+    {
+      "role": "coordinator",
+      "pid": 6,
+      "ensemble": 3,
+      "host": "localhost",
+      "port": 50009
+    }
+  ],
+  "acceptor_sequences": [
+    {
+      "id": 0,
+      "ensemble_id": 0,
+      "coordinator_writes": true,
+      "acceptors": [
+        0
+      ]
+    },
+    {
+      "id": 1,
+      "ensemble_id": 1,
+      "coordinator_writes": true,
+      "acceptors": [
+        2
+      ]
+    },
+    {
+      "id": 2,
+      "ensemble_id": 2,
+      "coordinator_writes": true,
+      "acceptors": [
+        4
+      ]
+    },
+    {
+      "id": 3,
+      "ensemble_id": 3,
+      "coordinator_writes": true,
+      "acceptors": [
+        6
+      ]
+    }
+  ],
+  "group_members": [
+    {
+      "pid": 21,
+      "group": 1,
+      "host": "localhost",
+      "port": 50021,
+      "rmcast_address" : "localhost" ,
+      "rmcast_port"    : 50521
+    },
+    {
+      "pid": 22,
+      "group": 2,
+      "host": "localhost",
+      "port": 50022,
+      "rmcast_address" : "localhost" ,
+      "rmcast_port"    : 50522
+    },
+    {
+      "pid": 23,
+      "group": 3,
+      "host": "localhost",
+      "port": 50023,
+      "rmcast_address" : "localhost" ,
+      "rmcast_port"    : 50523
+    }
+  ],
+  "oracle": 3
+}
