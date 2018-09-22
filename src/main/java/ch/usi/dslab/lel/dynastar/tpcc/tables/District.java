@@ -111,4 +111,9 @@ public class District extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "d_w_id,d_id,d_state,d_ytd,d_name,d_street_1,d_street_2,d_zip,model,d_city,d_next_o_id,d_tax";
+    }
 }

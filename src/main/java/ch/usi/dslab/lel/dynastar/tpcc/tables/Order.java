@@ -103,4 +103,9 @@ public class Order extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "o_w_id,o_d_id,o_c_id,o_id,o_carrier_id,o_all_local,o_entry_d,model,o_ol_cnt";
+    }
 }

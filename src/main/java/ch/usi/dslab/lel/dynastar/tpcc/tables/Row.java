@@ -246,6 +246,7 @@ public abstract class Row extends PRObject {
                 }
                 return true;
             } catch (IllegalAccessException | ScriptException | NoSuchFieldException | IllegalArgumentException e) {
+                System.out.println(field.getName());
                 System.out.println(field.getName() + " - " + fieldType.getName() + " - " + fieldValue + " - " + interpret(String.valueOf(fieldValue)).toString());
                 e.printStackTrace();
             }
@@ -308,18 +309,22 @@ public abstract class Row extends PRObject {
         ret.add(this.getModelName());
         ret.add(String.valueOf(this.getId().value));
         Map<String, Object> attrs = this.toHashMap();
-        for (String key : attrs.keySet()) {
+        String[] keys = this.getCSVHeader() == null ? (String[]) attrs.keySet().toArray() : this.getCSVHeader().split(",");
+        for (String key : keys) {
             ret.add(String.valueOf(attrs.get(key)));
         }
 
         return String.join(",", ret);
     }
 
+    public abstract String getCSVHeader();
+
     public String toCSVHeader() {
         List<String> ret = new ArrayList<>();
         ret.add("Header");
         ret.add(this.getModelName());
         ret.add("ObjId");
+        if (this.getCSVHeader() != null) return String.join(",", ret) + "," + this.getCSVHeader();
         Map<String, Object> attrs = this.toHashMap();
         for (String key : attrs.keySet()) {
             ret.add(String.valueOf(key));

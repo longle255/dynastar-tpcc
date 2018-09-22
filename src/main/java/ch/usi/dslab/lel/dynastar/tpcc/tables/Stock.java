@@ -104,4 +104,9 @@ public class Stock extends Row {
         return this.model.getName();
     }
 
+    @Override
+    public String getCSVHeader() {
+        return "s_w_id,s_i_id,s_dist_01,s_dist_02,s_dist_03,s_dist_04,s_dist_05,s_dist_06,s_dist_07,s_dist_08,s_dist_09,s_dist_10,s_order_cnt,s_data,model,s_quantity,s_ytd,s_remote_cnt";
+    }
+
 }  // end Stock

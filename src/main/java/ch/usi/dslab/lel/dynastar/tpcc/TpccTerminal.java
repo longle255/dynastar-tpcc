@@ -5,7 +5,7 @@ import ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccConfig;
 import ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil;
 import ch.usi.dslab.lel.dynastarv2.Client;
 import ch.usi.dslab.lel.dynastarv2.command.Command;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -107,6 +107,7 @@ public class TpccTerminal implements Runnable {
         params.put("supplierWarehouseIDs", supplierWarehouseIDs);
         params.put("orderQuantities", orderQuantities);
         Command cmd = new Command(TpccCommandType.NEW_ORDER, params);
+        cmd.setServerDecidesMove(true);
         clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
@@ -153,6 +154,7 @@ public class TpccTerminal implements Runnable {
 
 
         Command cmd = new Command(TpccCommandType.PAYMENT, params);
+        cmd.setServerDecidesMove(true);
         clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
@@ -179,6 +181,7 @@ public class TpccTerminal implements Runnable {
         params.put("randomSeed", System.nanoTime());
 
         Command cmd = new Command(TpccCommandType.ORDER_STATUS, params);
+        cmd.setServerDecidesMove(true);
         clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
@@ -188,6 +191,7 @@ public class TpccTerminal implements Runnable {
         params.put("w_id", terminalWarehouseID);
         params.put("o_carrier_id", orderCarrierID);
         Command cmd = new Command(TpccCommandType.DELIVERY, params);
+        cmd.setServerDecidesMove(true);
         clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
@@ -200,6 +204,7 @@ public class TpccTerminal implements Runnable {
         params.put("d_id", districtId);
         params.put("threshold", threshold);
         Command cmd = new Command(TpccCommandType.STOCK_LEVEL, params);
+        cmd.setServerDecidesMove(true);
         clientProxy.executeCommand(cmd).thenAccept(then);
     }
 

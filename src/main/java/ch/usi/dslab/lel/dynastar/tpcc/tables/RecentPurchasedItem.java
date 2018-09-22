@@ -85,4 +85,9 @@ public class RecentPurchasedItem extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return null;
+    }
 }

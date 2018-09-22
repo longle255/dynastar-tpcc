@@ -56,7 +56,7 @@ if numClients > 0:
 
 #
 # server active monitor
-if not common.LOCALHOST:
+if not common.ENV_LOCALHOST:
     serverLogs = ["cpu"]  # , "bandwidth", "memory"]
     if numServers > 0:
         for log in serverLogs:
@@ -70,6 +70,22 @@ if not common.LOCALHOST:
             logsargs.append("ORACLE")
             logsargs.append(str(numOracles * common.replicasPerPartition))
 
+if numServers > 1:
+    logsargs.append("throughput")
+    logsargs.append("partition_move")
+    logsargs.append(str(numServers))
+
+    logsargs.append("throughput")
+    logsargs.append("partition_move_obj_count")
+    logsargs.append(str(numServers))
+
+    logsargs.append("throughput")
+    logsargs.append("oracle_query")
+    logsargs.append(str(numOracles))
+
+    logsargs.append("message")
+    logsargs.append("oracle_repartitioning")
+    logsargs.append(str(numOracles))
 # server passive monitor
 # logsargs.append("throughput")
 # logsargs.append("partition_move")

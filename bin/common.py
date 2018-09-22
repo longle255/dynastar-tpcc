@@ -9,33 +9,51 @@ import subprocess
 import threading
 from string import Template
 
+import pwd
 import sys
+
+
+def get_username():
+    return pwd.getpwuid(os.getuid())[0]
+
+
+def script_dir():
+    return os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda _: None)))
+
+
+# available machines
+def noderange(first, last):
+    return ["192.168.3." + str(val) for val in [node for node in range(first, last + 1) if node not in DEAD_NODES]]
+
 
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 EXPERIMENT_DURATION = 180
-EXPERIMENT_DURATION = 360  #300 for 2,4, 360 for 8
-EXPERIMENT_WARMUP_MS = 100  # ms
+EXPERIMENT_DURATION = 250  # 300 for 2,4, 360 for 8
 EXPERIMENT_WARMUP_MS = 50000  # ms //70 for 2,4 100 for 8 16
+EXPERIMENT_WARMUP_MS = 100  # ms
 
-LOCALHOST = False
-LOCALHOST_CLUSTER = False
-if socket.gethostname()[:4] != 'node': LOCALHOST = True
-if socket.gethostname() == 'node92': LOCALHOST_CLUSTER = True
+ENV_LOCALHOST = False
+ENV_CLUSTER = False
+ENV_EC2 = False
 
-# LOCALHOST=False
+USERNAME = get_username()
+
+if socket.gethostname()[:4] == 'node': ENV_CLUSTER = True
+if USERNAME == 'ubuntu': ENV_EC2 = True
+if not ENV_EC2 and not ENV_CLUSTER: ENV_LOCALHOST = True
 
 LOCALHOST_NODES = []
 for i in range(1, 50): LOCALHOST_NODES.append("127.0.0.1")
 
-DEAD_NODES = [81, 89, 83, 60]
-NODES_RANGE_FIRST = 1
-NODES_RANGE_LAST = 60
+DEAD_NODES = [41, 44, 51, 53, 68, 69, 77, 81, 89, 83, 60]
+NODES_RANGE_FIRST = 25
+NODES_RANGE_LAST = 88
 PROFILING_PATH = "/home/long/softwares/yjp-2017.02/bin/linux-x86-64/libyjpagent.so"
 
-DEBUGGING = True
 DEBUGGING = False
+DEBUGGING = True
 
 PROFILING = True
 PROFILING = False
@@ -55,22 +73,18 @@ MCAST_LIB = 'jmcast'
 MULTITHREADED_CLIENT = False
 MULTITHREADED_CLIENT = True
 
-if LOCALHOST:
+if ENV_LOCALHOST:
     REMOTE_ENV = ""
+    NODES = LOCALHOST_NODES
+
+elif ENV_EC2:
+    REMOTE_ENV = " LD_LIBRARY_PATH=/home/" + USERNAME + "/.local/lib:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libevent_pthreads-2.0.so.5:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevamcast.so:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevmcast.so"
+    f = open(os.path.normpath(script_dir() + '/../../bin/aws/instances.dat'), 'r')
+    NODES = [val.rstrip('\n') for val in f.readlines()]
 else:
-    REMOTE_ENV = " LD_LIBRARY_PATH=/home/long/.local/lib:/home/long/apps/ScalableSMR/libjmcast/libmcast/build/local/lib LD_PRELOAD=/home/long/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevamcast.so:/home/long/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevmcast.so"
-# REMOTE_ENV = "" if LOCALHOST else
-if not MCAST_LIB == 'jmcast': REMOTE_ENV = ""
-
-
-# available machines
-def noderange(first, last):
-    return ["192.168.3." + str(val) for val in [node for node in range(first, last + 1) if node not in DEAD_NODES]]
-
-
-NODES = LOCALHOST_NODES if LOCALHOST or LOCALHOST_CLUSTER else noderange(NODES_RANGE_FIRST, NODES_RANGE_LAST)
-NODES = LOCALHOST_NODES if LOCALHOST or LOCALHOST_CLUSTER else noderange(1, 19) + noderange(31, 60)
-NODES = LOCALHOST_NODES if LOCALHOST or LOCALHOST_CLUSTER else noderange(1, 80)
+    REMOTE_ENV = " LD_LIBRARY_PATH=/home/" + USERNAME + "/.local/lib:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib LD_PRELOAD=/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevamcast.so:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevmcast.so"
+    # NODES = noderange(NODES_RANGE_FIRST, NODES_RANGE_LAST)
+    NODES = noderange(1, 40) #+ noderange(41, 88)
 
 RUNNING_MODE_DYNASTAR = "DYNASTAR"
 RUNNING_MODE_SSMR = "SSMR"
@@ -109,10 +123,6 @@ class LauncherThread(threading.Thread):
         for cmd in self.cmdList:
             logging.debug("Executing: %s", cmd["cmdstring"])
             sshcmdbg(cmd["node"], cmd["cmdstring"])
-
-
-def script_dir():
-    return os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda _: None)))
 
 
 def sshcmd(node, cmdstring, timeout=None):
@@ -327,7 +337,7 @@ javaCPUMonitorClass = "ch.usi.dslab.bezerra.sense.monitors.CPUEmbededMonitorJava
 javaCPUMonitorClass = "ch.usi.dslab.bezerra.sense.monitors.CPUMonitorMPStat"
 javaMemoryMonitorClass = "ch.usi.dslab.bezerra.sense.monitors.MemoryMonitor"
 
-TPCC_LOG_BASE = HOME + "/log/experiments/"
+TPCC_LOG_BASE = HOME + "/log/wrapup/"
 TPCC_LOG_CLIENTS = HOME + "/log/clients"
 TPCC_LOG_SERVERS = HOME + "/log/server"
 
@@ -342,6 +352,35 @@ def get_social_network_file(set, edgecut, num_user, num_partition):
 
 
 def getJavaExec(node, role):
+    # if not DEBUGGING:
+    #     log = 'log4j.xml'
+    # else:
+    #     log = 'log4jDebug.xml'
+    #
+    # java = "java"
+    # if PROFILING: java = java + " -agentpath:" + PROFILING_PATH
+    # if ENV_LOCALHOST:
+    #     log = 'log4jLocal.xml'
+    #     return java + " -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    # if LOCALHOST_CLUSTER:
+    #     log = 'log4j.xml'
+    #     return java + " -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    #
+    # if role == 'GATHERER':
+    #     return java + " -XX:+UseG1GC -Xmx6g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    # if role == 'SERVER':
+    #     return java + "  -server -Xloggc:/home/long/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    #
+    # if role == 'CLIENT':
+    #     regex = re.compile("192.168.3.(\d*)")
+    #     matched = regex.match(node)
+    #     if int(matched.groups()[0]) in [90, 91, 92]:
+    #         return java + " -client -XX:+UseG1GC -Xmx120g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    #     if int(matched.groups()[0]) in range(1, 46):
+    #         return java + " -client -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    #     if int(matched.groups()[0]) in range(46, 89):
+    #         return java + " -client -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+    #     return java + " -client -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
     if not DEBUGGING:
         log = 'log4j.xml'
     else:
@@ -349,42 +388,35 @@ def getJavaExec(node, role):
 
     java = "java"
     if PROFILING: java = java + " -agentpath:" + PROFILING_PATH
-    if LOCALHOST:
+    if ENV_LOCALHOST:
         log = 'log4jLocal.xml'
         return java + " -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
-    if LOCALHOST_CLUSTER:
-        log = 'log4j.xml'
-        return java + " -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+
 
     if role == 'GATHERER':
-        return java + " -XX:+UseG1GC -Xmx6g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+        if ENV_CLUSTER:
+            return java + " -XX:+UseG1GC -Xmx6g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+        if ENV_EC2:
+            return java + " -XX:+UseG1GC -Xmx3g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
     if role == 'SERVER':
-        return java + "  -server -Xloggc:/home/long/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
-        # return java + "  -server -Xloggc:/home/long/gc." + node + ".log -Xmx4096m -Xms4096m -Xmn2g  -XX:ParallelGCThreads=20 -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15  -Dlog4j.configuration=file:" + HOME + "/bin/" + log
-        # return java + "  -Xloggc:/home/long/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+        if ENV_CLUSTER:
+            return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+        if ENV_EC2:
+            return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
 
-        #-XX:+UseConcMarkSweepGC -XX:+UseParNewGC
-        #Selects the Concurrent Mark Sweep collector. This collector may deliver better response time properties for the application
-        # (i.e., low application pause time). It is a parallel and mostly-concurrent collector and and can be a good match for the
-        # threading ability of an large multi-processor systems.
-        #-XX:SurvivorRatio=8
-        #Sets survivor space ratio to 1:8, resulting in larger survivor spaces (the smaller the ratio, the larger the space).
-        # Larger survivor spaces allow short lived objects a longer time period to die in the young generation.
-
-
-        # return java + " -XX:+UseParallelGC -Xms2g -Xmx2g -XX:+UseCompressedOops -Dlog4j.configuration=file:" + HOME + "/bin/" + log
-        # return java + " -Xms4096m -Xmx4096m -Xmn1536m -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=90 -XX:TargetSurvivorRatio=90 -Dlog4j.configuration=file:" + HOME + "/bin/" + log
-        # return java + " -XX:+UseG1GC -Xmx6g -Xms6g -Xmn5g -XX:+UseCompressedOops -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=1 -Dlog4j.configuration=file:" + HOME + "/bin/" + log
     if role == 'CLIENT':
+        if ENV_EC2:
+            return java + " -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
         regex = re.compile("192.168.3.(\d*)")
         matched = regex.match(node)
         if int(matched.groups()[0]) in [90, 91, 92]:
-            return java + " -client -XX:+UseG1GC -Xmx120g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+            return java + " -XX:+UseG1GC -Xmx120g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
         if int(matched.groups()[0]) in range(1, 46):
-            return java + " -client -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+            return java + " -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
         if int(matched.groups()[0]) in range(46, 89):
-            return java + " -client -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
-        return java + " -client -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+            return java + " -XX:+UseG1GC -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+
+        return java + " -XX:+UseG1GC -Xmx4g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
 
 
 def render_template(ftpl, value, fout):

@@ -28,7 +28,7 @@ config = json.load(config_stream)
 partition = json.load(partition_stream)
 
 # set to <=0 to turn off debug, set to groupId to only start that group
-debug = 2
+debug = 1
 debug = 0
 
 if debug > 0: print "DEBUGGING MODE: ONLY START THIS GROUP ", debug

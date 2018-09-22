@@ -85,4 +85,9 @@ public class NewOrder extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "no_w_id,no_d_id,no_o_id,model";
+    }
 }

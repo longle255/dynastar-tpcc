@@ -11,11 +11,12 @@ data_file = common.BIN_HOME + "/databases/w_4_d_10_c_20_i_100.data"
 data_file = common.BIN_HOME + "/databases/w_2_d_10_c_20_i_100.data"
 data_file = common.BIN_HOME + "/databases/w_16_d_10_c_20_i_100.data"
 data_file = common.BIN_HOME + "/databases/w_2_d_10_c_3000_i_100000.data"
+data_file_template = common.BIN_HOME + "/databasesNoC/w_{}_d_10_c_3000_i_100000.data"
 data_file_template = common.BIN_HOME + "/databases/w_16_d_10_c_20_i_100.data"
-data_file_template = common.BIN_HOME + "/databases/w_{}_d_10_c_20_i_100.data"
 data_file_template = common.BIN_HOME + "/databases/w_{}_d_10_c_3000_i_100000.data"
+data_file_template = common.BIN_HOME + "/databases/w_{}_d_10_c_20_i_100.data"
 
-loads = [2]
+loads = [4] #number of load equal number of warehouses
 
 preloadData = "True"
 
@@ -25,35 +26,17 @@ partitionings = [2, 4, 8]
 partitionings = [16]
 partitionings = [4, 8, 16]
 partitionings = [16]
-partitionings = [2, 4]
-partitionings = [2, 4, 8, 16]
+partitionings = [4, 8, 16]
+partitionings = [4]
 
-runCount = 5
+runCount = 1
 
 workloads = {
-    "default": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 4},
-    # "default1": {"wNO": 45, "wP": 43, "wD": 0, "wOS": 0, "wSL": 0},
-    # "default2": {"wNO": 45, "wP": 0, "wD": 4, "wOS": 0, "wSL": 0},
-    # "default3": {"wNO": 45, "wP": 0, "wD": 0, "wOS": 4, "wSL": 0},
-    # "default4": {"wNO": 45, "wP": 0, "wD": 0, "wOS": 0, "wSL": 4},
-    # "default6": {"wNO": 0, "wP": 43, "wD": 4, "wOS": 0, "wSL": 0},
-    # "default7": {"wNO": 0, "wP": 43, "wD": 0, "wOS": 4, "wSL": 0},
-    # "default8": {"wNO": 0, "wP": 43, "wD": 0, "wOS": 0, "wSL": 4},
-
-    # "default1": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 0},
-    # "default2": {"wNO": 45, "wP": 43, "wD": 0, "wOS": 4, "wSL": 4},
-    # "default3": {"wNO": 45, "wP": 43, "wD": 0, "wOS": 4, "wSL": 0},
-    # "default4": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 0},
-    # "default6": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 0, "wSL": 4},
-    # "default7": {"wNO": 45, "wP": 43, "wD": 0, "wOS": 4, "wSL": 4},
-
-    # "default1": {"wNO":45, "wP":0, "wD":4, "wOS":0, "wSL":0},
-    # "default2": {"wNO":45, "wP":43, "wD":0, "wOS":4, "wSL":4},
-    # "default3": {"wNO":45, "wP":43, "wD":4, "wOS":0, "wSL":4},
-    # "default4": {"wNO":45, "wP":43, "wD":4, "wOS":4, "wSL":0},
+    # "default": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 4},
+    "default": {"wNO": 45, "wP": 0, "wD": 4, "wOS": 4, "wSL": 4},
     # "exceptNO": {"wNO":0, "wP":50, "wD":4, "wOS":4, "wSL":4},
     # "exceptNO_SL": {"wNO":0, "wP":50, "wD":4, "wOS":4, "wSL":0},
-    # "NO_P": {"wNO":50, "wP":50, "wD":0, "wOS":0, "wSL":0},
+    # "default": {"wNO":100, "wP":0, "wD":0, "wOS":0, "wSL":0},
     # "NO_D": {"wNO":50, "wP":0, "wD":50, "wOS":0, "wSL":0},
     # "NO_OS": {"wNO":50, "wP":0, "wD":0, "wOS":50, "wSL":0},
     # "NO_SL": {"wNO":50, "wP":0, "wD":0, "wOS":0, "wSL":50},
@@ -68,6 +51,7 @@ workloads = {
     # "pureSL": {"wNO":0, "wP":0, "wD":0, "wOS":0, "wSL":100},
 }
 
+MODES = [common.RUNNING_MODE_SSMR]
 MODES = [common.RUNNING_MODE_DYNASTAR]
 
 
@@ -94,7 +78,7 @@ def run():
 
                     for numClients in loads:
                         # numClients = numClients * (numPartitions / 2)
-                        numClients = numClients * (numPartitions / 2)
+                        # numClients = numClients * (numPartitions / 2)
                         experimentCmd = ' '.join([str(val) for val in
                                                   [common.tpccAllInOne, numClients, numPartitions,
                                                    data_file, mode, preloadData, wNewOrder, wPayment,

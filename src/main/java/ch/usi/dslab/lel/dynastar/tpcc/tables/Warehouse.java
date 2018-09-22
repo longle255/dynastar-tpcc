@@ -103,5 +103,10 @@ public class Warehouse extends Row {
         return this.model.getName();
     }
 
+    @Override
+    public String getCSVHeader() {
+        return "w_id,w_name,w_zip,w_street_2,w_state,w_street_1,w_ytd,w_city,w_tax,model";
+    }
+
 
 }

@@ -55,7 +55,7 @@ public class TpccServer extends PartitionStateMachine {
         TpccProcedure appProcedure = new TpccProcedure();
         TpccServer server = new TpccServer(replicaId, systemConfigFile, partitionsConfigFile, appProcedure);
         server.preLoadData(database, gathererHost);
-        appProcedure.init("SERVER", server.objectGraph, server.secondaryIndex);
+        appProcedure.init("SERVER", server.objectGraph, server.secondaryIndex, logger, server.partitionId);
         server.setupMonitoring(gathererHost, gathererPort, gathererDir, gathererDuration, gathererWarmup);
         server.runStateMachine();
 
@@ -69,7 +69,7 @@ public class TpccServer extends PartitionStateMachine {
             e.printStackTrace();
         }
         if (hostName.indexOf("node") == 0) {
-            redisHost = "192.168.3.90";
+            redisHost = "192.168.3.91";
         } else {
             redisHost = "127.0.0.1";
         }
@@ -79,7 +79,7 @@ public class TpccServer extends PartitionStateMachine {
         String fileName = fileNameParts[fileNameParts.length - 1];
         Integer partitionCount = Partition.getPartitionsCount();
         log.info("Creating connection to redis host " + redisHost);
-        BinaryJedis jedis = new BinaryJedis(redisHost, 6379, 60000);
+        BinaryJedis jedis = new BinaryJedis(redisHost, 6379, 600000);
         Codec codec = new CodecUncompressedKryo();
         byte[] keyObjectGraph = (fileName + "_p_" + partitionCount + "_SERVER_" + this.partitionId + "_objectGraph").getBytes();
         byte[] keySecondaryIndex = (fileName + "_p_" + partitionCount + "_SERVER_" + this.partitionId + "_secondaryIndex").getBytes();
@@ -106,6 +106,9 @@ public class TpccServer extends PartitionStateMachine {
             TpccUtil.loadDataToCache(file, this.objectGraph, this.secondaryIndex, (objId, obj) -> {
                 int dest = TpccUtil.mapIdToPartition(objId);
                 if (nextObjId.get() <= objId.value) nextObjId.set(objId.value + 1);
+                if (obj.get("model").equals("Customer")) {
+//                    System.out.println("[SERVER" + this.partitionId + "] indexing " + objId);
+                }
                 if (this.partitionId == dest || obj.get("model").equals("Item")) {
                     TpccCommandPayload payload = new TpccCommandPayload(obj);
                     createObject(objId, payload);
@@ -260,7 +263,7 @@ public class TpccServer extends PartitionStateMachine {
                         assert stock != null;
 
                         int s_remote_cnt_increment;
-//                    log.debug("cmd {} retriving stock w_id={} i_id={} stock {}", command.getId(),ol_supply_w_id, ol_i_id, stock);
+                    log.debug("cmd {} retriving stock w_id={} i_id={} stock {}", command.getId(),ol_supply_w_id, ol_i_id, stock);
                         stockQuantities.set(ol_number - 1, stock.s_quantity);
                         if (stock.s_quantity - ol_quantity >= 10) {
                             stock.s_quantity -= ol_quantity;

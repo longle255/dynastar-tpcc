@@ -1,6 +1,7 @@
 package ch.usi.dslab.lel.dynastar.tpcc.tpcc;
 
 import ch.usi.dslab.lel.dynastar.tpcc.tables.*;
+import ch.usi.dslab.lel.dynastarv2.command.Command;
 import ch.usi.dslab.lel.dynastarv2.probject.ObjId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -50,6 +51,7 @@ public class TpccDataGenerator {
         input = scan.nextLine();
         int itemCount = Integer.parseInt(input);
         String filePath = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/";
+//        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/";
         TpccDataGenerator generator = new TpccDataGenerator(filePath, warehouseCount, districtCount, customerCount, itemCount);
         generator.generateCSVData();
     }

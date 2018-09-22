@@ -24,7 +24,7 @@ public class TpccOracle extends OracleStateMachine {
     public static final Logger log = LoggerFactory.getLogger(TpccOracle.class);
 
     private int repartitioningThreshold = 3;
-    private long repartitioningInterval = 120000;
+    private long repartitioningInterval = 90000;
 
 
     // need 24s for loading data for 2, 15s for cache
@@ -38,9 +38,12 @@ public class TpccOracle extends OracleStateMachine {
 
     public TpccOracle(int serverId, String systemConfig, String partitionsConfig, TpccProcedure appProcedure) {
         super(serverId, systemConfig, partitionsConfig, appProcedure);
+        this.setRepartitioningThreshold(0); // no dynamic
         this.setRepartitioningInterval(repartitioningInterval);
-        this.setRepartitioningThreshold(repartitioningThreshold);
-        this.setRecurringPartitioning(false);
+        this.setRepartitioningLimit(1);
+
+
+        this.setRepeatingPartitioning(false);
     }
 
     public static void main(String args[]) {
@@ -63,7 +66,7 @@ public class TpccOracle extends OracleStateMachine {
             TpccProcedure appProcedure = new TpccProcedure();
             TpccOracle oracle = new TpccOracle(oracleId, systemConfigFile, partitionConfigFile, appProcedure);
             oracle.preLoadData(database, gathererHost);
-            appProcedure.init("ORACLE", oracle.objectGraph, oracle.secondaryIndex);
+            appProcedure.init("ORACLE", oracle.objectGraph, oracle.secondaryIndex, logger, oracle.partitionId);
             System.out.println("Oracle DynaStar TPCC, Sample data loaded...");
             oracle.setupMonitoring(gathererHost, gathererPort, gathererDir, gathererDuration, gathererWarmup);
             oracle.runStateMachine();
@@ -147,7 +150,7 @@ public class TpccOracle extends OracleStateMachine {
             e.printStackTrace();
         }
         if (hostName.indexOf("node") == 0) {
-            redisHost = "192.168.3.90";
+            redisHost = "192.168.3.91";
         } else {
             redisHost = "127.0.0.1";
         }
@@ -157,7 +160,7 @@ public class TpccOracle extends OracleStateMachine {
         String fileName = fileNameParts[fileNameParts.length - 1];
         Integer partitionCount = Partition.getPartitionsCount();
         System.out.println("Creating connection to redis host " + redisHost);
-        BinaryJedis jedis = new BinaryJedis(redisHost);
+        BinaryJedis jedis = new BinaryJedis(redisHost, 6379, 600000);
         Codec codec = new CodecUncompressedKryo();
         byte[] keyObjectGraph = (fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_objectGraph").getBytes();
         byte[] keySecondaryIndex = (fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_secondaryIndex").getBytes();

@@ -15,7 +15,8 @@ import ch.usi.dslab.lel.dynastarv2.command.Command;
 import ch.usi.dslab.lel.dynastarv2.probject.ObjId;
 import ch.usi.dslab.lel.dynastarv2.probject.PRObjectGraph;
 import ch.usi.dslab.lel.dynastarv2.probject.PRObjectNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.BinaryJedis;
 
 import java.net.InetAddress;
@@ -28,7 +29,7 @@ import java.util.function.Consumer;
 import static ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccConfig.*;
 
 public class TpccClient {
-    private static final Logger logger = Logger.getLogger(TpccClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(TpccClient.class);
     private Client clientProxy;
     private Random gen;
     private TpccTerminal[] terminals;
@@ -55,7 +56,7 @@ public class TpccClient {
         TpccProcedure appProcedure = new TpccProcedure();
         clientProxy = new Client(clientId, systemConfigFile, partitioningFile, appProcedure);
         this.preLoadData(dataFile);
-        appProcedure.init("CLIENT", clientProxy.getCache(), clientProxy.getSecondaryIndex());
+        appProcedure.init("CLIENT", clientProxy.getCache(), clientProxy.getSecondaryIndex(), logger, 0);
         gen = new Random(System.nanoTime());
         this.terminalNum = terminalNum;
         this.transactionNum = transactionNum;
@@ -67,7 +68,7 @@ public class TpccClient {
             this.runInteractive();
         } else {
 
-            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, terminalDistribution);
+            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, "w=1:d=1_w=2:d=1_w=1:d=2_w=2:d=2_w=1:d=3_w=2:d=3_w=1:d=4_w=2:d=4_w=1:d=5_w=2:d=5");
         }
     }
 
@@ -155,7 +156,7 @@ public class TpccClient {
             e.printStackTrace();
         }
         if (hostName.indexOf("node") == 0) {
-            redisHost = "192.168.3.90";
+            redisHost = "192.168.3.91";
         } else {
             redisHost = "127.0.0.1";
         }
@@ -309,45 +310,6 @@ public class TpccClient {
                 (new Thread(terminals[i])).start();
 
         }
-//
-//        rnd = new TpccRandom(1);
-//        int[][] usedTerminals = new int[this.warehouseCount][TpccConfig.configDistPerWhse];
-//        for (int i = 0; i < this.warehouseCount; i++)
-//            for (int j = 0; j < TpccConfig.configDistPerWhse; j++)
-//                usedTerminals[i][j] = 0;
-//
-//
-//        for (int i = 0; i < terminalParts.length; i++) {
-//            int terminalWarehouseID;
-//            int terminalDistrictID;
-//            do {
-//                terminalWarehouseID = rnd.nextInt(1, this.warehouseCount);
-//                terminalDistrictID = rnd.nextInt(1, TpccConfig.configDistPerWhse);
-//            }
-//            while (usedTerminals[terminalWarehouseID - 1][terminalDistrictID - 1] == 1);
-//            usedTerminals[terminalWarehouseID - 1][terminalDistrictID - 1] = 1;
-//
-//            String terminalName = this.clientProxy.getId() + "/Term-" + (i >= 9 ? "" + (i + 1) : "0" + (i + 1));
-//
-//            TpccTerminal terminal = new TpccTerminal(this.clientProxy, terminalName, i, this.warehouseCount,
-//                    terminalWarehouseID, terminalDistrictID, transactionNum, iNewOrderWeight, iPaymentWeight, iDeliveryWeight, iOrderStatusWeight, iStockLevelWeight,
-//                    -1, this, callbackHandler);
-////            System.out.println("Client " + this.clientProxy.getId() + " starting terminal for warehouse/district " + terminalWarehouseID + "/" + terminalDistrictID);
-//            terminal.setLogger(logger);
-//            terminals[i] = terminal;
-//            terminalNames[i] = terminalName;
-//            logger.debug(terminalName + "\t" + terminalWarehouseID);
-//        }
-////        sessionEndTargetTime = executionTimeMillis;
-//        signalTerminalsRequestEndSent = false;
-//
-//        synchronized (terminals) {
-//            logger.debug("Starting all terminals... Terminal count: " + terminals.length);
-//            transactionCount = 1;
-//            for (int i = 0; i < terminals.length; i++)
-//                (new Thread(terminals[i])).start();
-//
-//        }
 
     }
 
@@ -460,7 +422,7 @@ public class TpccClient {
             long totalMem = Runtime.getRuntime().totalMemory() / (1024 * 1024);
             fmt.format("    Memory Usage: %dMB / %dMB          ", (totalMem - freeMem), totalMem);
 
-            logger.info(informativeText);
+            logger.info(informativeText.toString());
 //            for (int count = 0; count < 1 + informativeText.length(); count++)
 //                System.out.print("\b");
         }

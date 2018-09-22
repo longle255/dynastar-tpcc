@@ -13,7 +13,7 @@ if len(sys.argv) > 1 :
     print "Killing runBatch.py"
     common.localcmd("pkill -9 runBatch.py")
 
-if common.LOCALHOST or common.LOCALHOST_CLUSTER:
+if common.ENV_LOCALHOST:
     common.localcmd("pkill -9 java")
     common.localcmdbg("ps ax | grep 'proposer-acceptor' | awk -F ' ' '{print $1}' | xargs kill -9")
 else:

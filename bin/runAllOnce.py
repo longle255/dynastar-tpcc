@@ -3,6 +3,7 @@
 import datetime
 import sys
 import time
+import os
 from os.path import abspath
 
 import common
@@ -42,7 +43,7 @@ wOrderStatus = iarg(9)
 wStockLevel = iarg(10)
 workloadName = sarg(11)
 
-if not common.LOCALHOST:
+if not common.ENV_LOCALHOST:
     common.localcmd(common.cleaner)
     time.sleep(5)
 
@@ -58,12 +59,19 @@ minClientId = None
 
 
 # disable clock sync
-if not common.LOCALHOST and common.MCAST_LIB == 'ridge':
+if not common.ENV_LOCALHOST and common.MCAST_LIB == 'ridge':
     for node in common.getNonScreenNodes():
         common.sshcmdbg(node, common.continousClockSynchronizer)
 
 sysConfig = systemConfigurer.generateSystemConfiguration(numPartitions, numOracles)
-time.sleep(5)
+time.sleep(2)
+
+if common.ENV_EC2:
+    # need to sync this sysConfig with other instances
+    print "Syncing config file"
+    os.system(
+        "/home/ubuntu/apps/ScalableSMR/bin/aws/control-sync-code.sh /home/ubuntu/apps/ScalableSMR/chirperV2/bin/systemConfigs")
+    time.sleep(5)
 
 serverList = sysConfig["server_list"]
 oracleList = sysConfig["oracle_list"]
@@ -148,7 +156,7 @@ common.localcmd(clientCmdString)
 # LAUNCH ACTIVE MONITORS
 ###########################################################################
 
-if not common.LOCALHOST:
+if not common.ENV_LOCALHOST:
     for nonClient in serverList:
         # bwmCmdPieces = [common.javabin, common.javacp, common.javaBWMonitorClass, "PARTITION",
         #                 nonClient["pid"], chirperSysConfig["gatherer_node"], str(common.gathererPort),
@@ -209,6 +217,11 @@ common.localcmd(gathererCmd)
 # processing logs
 ###########################################################################
 # collect main log files
+if common.ENV_EC2:
+    # need to bring file back
+    common.localcmd(
+        'rsync -e "ssh -o StrictHostKeyChecking=no" -rav ' + gathererNode + ':' + common.TPCC_LOG_BASE + '/* ' + common.TPCC_LOG_BASE)
+
 common.localcmd("cp " + common.benchCommonPath + " " + detailLogDir)
 common.localcmd("cp " + common.runBatchPath + " " + detailLogDir)
 common.localcmd("cp " + common.SYSTEM_CONFIG_FILE + " " + detailLogDir)
@@ -238,5 +251,5 @@ common.localcmdbg(tput_plotting_cmd)
 
 ###########################################################################
 # clean up
-if not common.LOCALHOST:
+if not common.ENV_LOCALHOST:
     common.localcmd(common.cleaner)

@@ -58,8 +58,8 @@ public class TpccDataPartitioner {
         int index = 0;
 //        String file = args[index++];
         int numPartition = Integer.parseInt(args[index++]);
-//        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
+        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
+//        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
 //        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
         TpccDataPartitioner app = new TpccDataPartitioner(file, numPartition);
         app.split();

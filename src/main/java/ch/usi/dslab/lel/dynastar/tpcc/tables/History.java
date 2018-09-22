@@ -106,4 +106,9 @@ public class History extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "h_w_id,h_d_id,h_c_id,h_c_w_id,h_c_d_id,h_data,h_date,model,h_amount";
+    }
 }

@@ -86,4 +86,9 @@ public class OrderLine extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "ol_w_id,ol_d_id,ol_o_id,ol_i_id,ol_supply_w_id,ol_dist_info,ol_delivery_d,ol_number,model,ol_quantity,ol_amount";
+    }
 }  // end OrderLine

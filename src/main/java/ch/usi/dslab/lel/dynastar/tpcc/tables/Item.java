@@ -67,4 +67,9 @@ public class Item extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "i_id,i_im_id,i_data,i_price,i_name,model";
+    }
 }  // end Item

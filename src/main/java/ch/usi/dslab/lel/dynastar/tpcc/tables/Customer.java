@@ -142,4 +142,9 @@ public class Customer extends Row {
     public String getModelName() {
         return this.model.getName();
     }
+
+    @Override
+    public String getCSVHeader() {
+        return "c_w_id,c_d_id,c_id,c_last,c_first,c_state,c_zip,c_discount,c_middle,c_ytd_payment,c_balance,c_phone,c_since,c_credit_lim,c_delivery_cnt,c_payment_cnt,model,c_street_1,c_city,c_street_2,c_credit,c_data";
+    }
 }
