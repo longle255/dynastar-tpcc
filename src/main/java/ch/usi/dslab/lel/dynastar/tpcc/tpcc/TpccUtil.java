@@ -121,6 +121,7 @@ public class TpccUtil extends TpccConfig {
 
     public static void loadDataToCache(String dataFile, PRObjectGraph graph, Map<String, Set<ObjId>> secondaryIndex, Callback callback) {
         Map<String, String[]> ret = new HashMap<>();
+        TpccProcedure procedure =  new TpccProcedure();
         TpccDataGenerator.loadCSVData(dataFile, line -> {
             String[] tmp = line.split(",");
             ObjId objId = null;
@@ -143,7 +144,7 @@ public class TpccUtil extends TpccConfig {
                 objId.setSId(Row.genSId(obj));
                 List<String> keys = Row.genStrObjId(obj);
                 for (String key : keys) {
-                    new TpccProcedure().addToSecondaryIndex(secondaryIndex, key, objId, null);
+                    procedure.addToSecondaryIndex(secondaryIndex, key, objId, null);
                 }
                 if (callback != null) callback.callback(objId, obj);
             }

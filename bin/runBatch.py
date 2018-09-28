@@ -33,7 +33,7 @@ runCount = 1
 
 workloads = {
     # "default": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 4},
-    "default": {"wNO": 45, "wP": 0, "wD": 4, "wOS": 4, "wSL": 4},
+    # "default": {"wNO": 45, "wP": 0, "wD": 4, "wOS": 4, "wSL": 4},
     # "exceptNO": {"wNO":0, "wP":50, "wD":4, "wOS":4, "wSL":4},
     # "exceptNO_SL": {"wNO":0, "wP":50, "wD":4, "wOS":4, "wSL":0},
     # "default": {"wNO":100, "wP":0, "wD":0, "wOS":0, "wSL":0},
@@ -44,11 +44,11 @@ workloads = {
     # "P_D_SL": {"wNO":0, "wP":50, "wD":50, "wOS":0, "wSL":50},
     # "D_OS_SL": {"wNO":0, "wP":0, "wD":50, "wOS":50, "wSL":50},
     # "NO_D_OS_SL": {"wNO":45, "wP":0, "wD":4, "wOS":4, "wSL":4},
-    # "pureNO": {"wNO": 100, "wP": 0, "wD": 0, "wOS": 0, "wSL": 0},
-    # "pureP": {"wNO": 0, "wP": 100, "wD": 0, "wOS": 0, "wSL": 0},
-    # "pureD": {"wNO": 0, "wP": 0, "wD": 100, "wOS": 0, "wSL": 0},
-    # "pureOS": {"wNO": 0, "wP": 0, "wD": 0, "wOS": 100, "wSL": 0},
-    # "pureSL": {"wNO":0, "wP":0, "wD":0, "wOS":0, "wSL":100},
+    "pureNO": {"wNO": 100, "wP": 0, "wD": 0, "wOS": 0, "wSL": 0},
+    "pureP": {"wNO": 0, "wP": 100, "wD": 0, "wOS": 0, "wSL": 0},
+    "pureD": {"wNO": 0, "wP": 0, "wD": 100, "wOS": 0, "wSL": 0},
+    "pureOS": {"wNO": 0, "wP": 0, "wD": 0, "wOS": 100, "wSL": 0},
+    "pureSL": {"wNO":0, "wP":0, "wD":0, "wOS":0, "wSL":100},
 }
 
 MODES = [common.RUNNING_MODE_SSMR]

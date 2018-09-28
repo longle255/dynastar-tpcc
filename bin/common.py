@@ -30,7 +30,7 @@ def noderange(first, last):
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 EXPERIMENT_DURATION = 180
-EXPERIMENT_DURATION = 250  # 300 for 2,4, 360 for 8
+EXPERIMENT_DURATION = 120  # 300 for 2,4, 360 for 8
 EXPERIMENT_WARMUP_MS = 50000  # ms //70 for 2,4 100 for 8 16
 EXPERIMENT_WARMUP_MS = 100  # ms
 
@@ -48,8 +48,8 @@ LOCALHOST_NODES = []
 for i in range(1, 50): LOCALHOST_NODES.append("127.0.0.1")
 
 DEAD_NODES = [41, 44, 51, 53, 68, 69, 77, 81, 89, 83, 60]
-NODES_RANGE_FIRST = 25
-NODES_RANGE_LAST = 88
+NODES_RANGE_FIRST = 1
+NODES_RANGE_LAST = 40
 PROFILING_PATH = "/home/long/softwares/yjp-2017.02/bin/linux-x86-64/libyjpagent.so"
 
 DEBUGGING = False
@@ -83,8 +83,8 @@ elif ENV_EC2:
     NODES = [val.rstrip('\n') for val in f.readlines()]
 else:
     REMOTE_ENV = " LD_LIBRARY_PATH=/home/" + USERNAME + "/.local/lib:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib LD_PRELOAD=/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevamcast.so:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevmcast.so"
-    # NODES = noderange(NODES_RANGE_FIRST, NODES_RANGE_LAST)
-    NODES = noderange(1, 40) #+ noderange(41, 88)
+    NODES = noderange(NODES_RANGE_FIRST, NODES_RANGE_LAST)
+    NODES = noderange(1, 34) + noderange(41, 60)
 
 RUNNING_MODE_DYNASTAR = "DYNASTAR"
 RUNNING_MODE_SSMR = "SSMR"

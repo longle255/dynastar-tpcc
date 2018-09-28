@@ -15,10 +15,24 @@
             ]
         }, 
         {
-            "type": "ORACLE", 
+            "type": "PARTITION", 
             "id": 2, 
             "servers": [
                 2
+            ]
+        }, 
+        {
+            "type": "PARTITION", 
+            "id": 3, 
+            "servers": [
+                3
+            ]
+        }, 
+        {
+            "type": "ORACLE", 
+            "id": 4, 
+            "servers": [
+                4
             ]
         }
     ]

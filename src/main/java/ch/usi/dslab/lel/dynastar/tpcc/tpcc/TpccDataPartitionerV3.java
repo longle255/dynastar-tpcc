@@ -16,12 +16,12 @@ import static ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil.mapStockToDistrict;
 /**
  * Author: longle, created on 08/04/16.
  */
-public class TpccDataPartitioner {
+public class TpccDataPartitionerV3 {
 
     String file;
     int numPartition;
 
-    public TpccDataPartitioner(String file, int numPartition) {
+    public TpccDataPartitionerV3(String file, int numPartition) {
         this.file = file;
         this.numPartition = numPartition;
     }
@@ -59,9 +59,12 @@ public class TpccDataPartitioner {
 //        String file = args[index++];
         int numPartition = Integer.parseInt(args[index++]);
 //        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-//        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
         String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
-        TpccDataPartitioner app = new TpccDataPartitioner(file, numPartition);
+
+
+//        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
+//        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
+        TpccDataPartitionerV3 app = new TpccDataPartitionerV3(file, numPartition);
         app.split();
     }
 
@@ -87,29 +90,34 @@ public class TpccDataPartitioner {
                 if (objId == null && obj == null) {
                     for (int i = 0; i < numPartition; i++) {
                         contents[i].append(line + "\n");
-                        oracleContent.append(line + "\n");
                     }
+                    oracleContent.append(line + "\n");
                     return;
                 }
 //                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse") || obj.get("model").equals("Customer")|| obj.get("model").equals("NewOrder")|| obj.get("model").equals("Order")|| obj.get("model").equals("OrderLine")) {
-                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse") || obj.get("model").equals("Customer")) {
+                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse")||obj.get("model").equals("Customer")) {
+//                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse")) {
                     for (int i = 0; i < numPartition; i++) {
                         contents[i].append(line + "\n");
 //                        System.out.println("partition " + i + " load " + obj);
-                        if (!obj.get("model").equals("Item") && !obj.get("model").equals("Customer") && !obj.get("model").equals("NewOrder") && !obj.get("model").equals("Order") && !obj.get("model").equals("OrderLine"))
-                            oracleContent.append(line + "\n");
+//                        if (!obj.get("model").equals("Item") && !obj.get("model").equals("Customer") && !obj.get("model").equals("NewOrder") && !obj.get("model").equals("Order") && !obj.get("model").equals("OrderLine"))
                     }
+                    if (!obj.get("model").equals("Item") && !obj.get("model").equals("Customer") && !obj.get("model").equals("NewOrder") && !obj.get("model").equals("Order") && !obj.get("model").equals("OrderLine"))
+                        oracleContent.append(line + "\n");
                 } else {
                     int dest = mapIdToPartition(objId);
                     contents[dest] = contents[dest].append(line + "\n");
+//                    if (obj.get("model").equals("Customer")) {
+//                        oracleContent.append(line + "\n");
+//                    }
 //                    System.out.println("partition " + dest + " load " + obj);
-                    if (obj.get("model").equals("NewOrder") || obj.get("model").equals("Order") || obj.get("model").equals("OrderLine")) {
-                        int destWarehouse = mapIdToWarehousePartition(objId);
-                        if (destWarehouse != dest) {
-                            contents[destWarehouse].append(line + "\n");
-//                            System.out.println("partition " + destWarehouse + " load " + obj);
-                        }
-                    }
+//                    if (obj.get("model").equals("NewOrder") || obj.get("model").equals("Order") || obj.get("model").equals("OrderLine")) {
+//                        int destWarehouse = mapIdToWarehousePartition(objId);
+//                        if (destWarehouse != dest) {
+//                            contents[destWarehouse].append(line + "\n");
+////                            System.out.println("partition " + destWarehouse + " load " + obj);
+//                        }
+//                    }
                 }
 
             });
@@ -158,7 +166,7 @@ public class TpccDataPartitioner {
             case "Warehouse":
                 return Integer.parseInt(parts[1].split("=")[1]) % this.numPartition;
             case "Stock":
-//                return mapStockToDistrict(objId.sId) % this.numPartition;
+                return mapStockToDistrict(objId.sId) % this.numPartition;
 //                return TpccConfig.defautDistrictForStock % this.numPartition;
             case "District":
             case "Customer":

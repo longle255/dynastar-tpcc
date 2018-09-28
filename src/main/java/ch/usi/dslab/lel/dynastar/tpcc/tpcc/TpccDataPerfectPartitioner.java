@@ -16,12 +16,12 @@ import static ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil.mapStockToDistrict;
 /**
  * Author: longle, created on 08/04/16.
  */
-public class TpccDataPartitioner {
+public class TpccDataPerfectPartitioner {
 
     String file;
     int numPartition;
 
-    public TpccDataPartitioner(String file, int numPartition) {
+    public TpccDataPerfectPartitioner(String file, int numPartition) {
         this.file = file;
         this.numPartition = numPartition;
     }
@@ -59,9 +59,9 @@ public class TpccDataPartitioner {
 //        String file = args[index++];
         int numPartition = Integer.parseInt(args[index++]);
 //        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-//        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
-        TpccDataPartitioner app = new TpccDataPartitioner(file, numPartition);
+        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/metis/w_" + numPartition + "_d_10_c_3000_i_100000.data";
+//        String file = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
+        TpccDataPerfectPartitioner app = new TpccDataPerfectPartitioner(file, numPartition);
         app.split();
     }
 

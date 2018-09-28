@@ -18,3 +18,7 @@ metis.inp.*
 bin/graph_scripts/data/*
 bin/systemConfigs/generated_*
 bin/databases
+
+bin/client.out
+bin/oracle.out
+bin/server.out

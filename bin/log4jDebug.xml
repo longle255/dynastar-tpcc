@@ -45,17 +45,17 @@
 
     <logger name="ch.usi.dslab.lel.dynastarv2.Client" additivity="false">
         <level value="debug"/>
-        <appender-ref ref="console"/>
+        <appender-ref ref="client_out"/>
     </logger>
 
     <logger name="ch.usi.dslab.lel.dynastarv2.PartitionStateMachine" additivity="false">
         <level value="debug"/>
-        <appender-ref ref="console"/>
+        <appender-ref ref="server_out"/>
     </logger>
 
     <logger name="ch.usi.dslab.lel.dynastarv2.OracleStateMachine" additivity="false">
         <level value="debug"/>
-        <appender-ref ref="console"/>
+        <appender-ref ref="oracle_out"/>
     </logger>
     <logger name="ch.usi.dslab.bezerra.sense.DataGatherer" additivity="false">
         <level value="info"/>
@@ -64,12 +64,12 @@
 
     <logger name="ch.usi.dslab.lel.dynastar.tpcc.TpccClient" additivity="false">
         <level value="debug"/>
-        <appender-ref ref="console"/>
+        <appender-ref ref="client_out"/>
     </logger>
 
     <logger name="ch.usi.dslab.lel.dynastar.tpcc.TpccServer" additivity="false">
         <level value="debug"/>
-        <appender-ref ref="console"/>
+        <appender-ref ref="server_out"/>
     </logger>
 
     <logger name="ch.usi.da.paxos.*" additivity="false">

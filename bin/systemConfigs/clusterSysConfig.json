@@ -1,0 +1,174 @@
+{
+    "paxos_groups": [
+        {
+            "group_members": [
+                {
+                    "host": "192.168.3.3", 
+                    "pid": 0, 
+                    "port": 51000, 
+                    "inc": 0
+                }, 
+                {
+                    "host": "192.168.3.4", 
+                    "pid": 1, 
+                    "port": 51001, 
+                    "inc": 1
+                }, 
+                {
+                    "host": "192.168.3.5", 
+                    "pid": 2, 
+                    "port": 51002, 
+                    "inc": 2
+                }
+            ], 
+            "group_id": 0
+        }, 
+        {
+            "group_members": [
+                {
+                    "host": "192.168.3.3", 
+                    "pid": 0, 
+                    "port": 51003, 
+                    "inc": 3
+                }, 
+                {
+                    "host": "192.168.3.4", 
+                    "pid": 1, 
+                    "port": 51004, 
+                    "inc": 4
+                }, 
+                {
+                    "host": "192.168.3.5", 
+                    "pid": 2, 
+                    "port": 51005, 
+                    "inc": 5
+                }
+            ], 
+            "group_id": 1
+        }, 
+        {
+            "group_members": [
+                {
+                    "host": "192.168.3.3", 
+                    "pid": 0, 
+                    "port": 51006, 
+                    "inc": 6
+                }, 
+                {
+                    "host": "192.168.3.4", 
+                    "pid": 1, 
+                    "port": 51007, 
+                    "inc": 7
+                }, 
+                {
+                    "host": "192.168.3.5", 
+                    "pid": 2, 
+                    "port": 51008, 
+                    "inc": 8
+                }
+            ], 
+            "group_id": 2
+        }, 
+        {
+            "group_members": [
+                {
+                    "host": "192.168.3.3", 
+                    "pid": 0, 
+                    "port": 51009, 
+                    "inc": 9
+                }, 
+                {
+                    "host": "192.168.3.4", 
+                    "pid": 1, 
+                    "port": 51010, 
+                    "inc": 10
+                }, 
+                {
+                    "host": "192.168.3.5", 
+                    "pid": 2, 
+                    "port": 51011, 
+                    "inc": 11
+                }
+            ], 
+            "group_id": 3
+        }, 
+        {
+            "group_members": [
+                {
+                    "host": "192.168.3.3", 
+                    "pid": 0, 
+                    "port": 51012, 
+                    "inc": 12
+                }, 
+                {
+                    "host": "192.168.3.4", 
+                    "pid": 1, 
+                    "port": 51013, 
+                    "inc": 13
+                }, 
+                {
+                    "host": "192.168.3.5", 
+                    "pid": 2, 
+                    "port": 51014, 
+                    "inc": 14
+                }
+            ], 
+            "group_id": 4
+        }
+    ], 
+    "jmcast_config_file": "/home/long/apps/ScalableSMR/dynastarTPCC/bin/systemConfigs/cluster_mcast.conf",
+    "group_members": [
+        {
+            "group": 0, 
+            "rmcast_port": 56000, 
+            "pid": 0, 
+            "host": "192.168.3.6", 
+            "gpid": 0, 
+            "rmcast_address": "192.168.3.6", 
+            "port": 50000
+        }, 
+        {
+            "group": 1, 
+            "rmcast_port": 56001, 
+            "pid": 1, 
+            "host": "192.168.3.7", 
+            "gpid": 0, 
+            "rmcast_address": "192.168.3.7", 
+            "port": 50001
+        }, 
+        {
+            "group": 2, 
+            "rmcast_port": 56002, 
+            "pid": 2, 
+            "host": "192.168.3.8", 
+            "gpid": 0, 
+            "rmcast_address": "192.168.3.8", 
+            "port": 50002
+        }, 
+        {
+            "group": 3, 
+            "rmcast_port": 56003, 
+            "pid": 3, 
+            "host": "192.168.3.9", 
+            "gpid": 0, 
+            "rmcast_address": "192.168.3.9", 
+            "port": 50003
+        }, 
+        {
+            "group": 4, 
+            "rmcast_port": 56004, 
+            "pid": 4, 
+            "host": "192.168.3.10", 
+            "gpid": 0, 
+            "rmcast_address": "192.168.3.10", 
+            "port": 50004
+        }
+    ], 
+    "batch_size_threshold_bytes": 50000, 
+    "batch_time_threshold_ms": 5, 
+    "batching_enabled": false, 
+    "rmcast_agent_class": "SimpleReliableMulticastAgent", 
+    "agent_class": "JMcastAgent", 
+    "delta_null_messages_ms": 5, 
+    "paxos_config_file": "/home/long/apps/ScalableSMR/dynastarTPCC/bin/systemConfigs/cluster_paxos.conf"
+}

@@ -106,9 +106,9 @@ public class TpccServer extends PartitionStateMachine {
             TpccUtil.loadDataToCache(file, this.objectGraph, this.secondaryIndex, (objId, obj) -> {
                 int dest = TpccUtil.mapIdToPartition(objId);
                 if (nextObjId.get() <= objId.value) nextObjId.set(objId.value + 1);
-                if (obj.get("model").equals("Customer")) {
-//                    System.out.println("[SERVER" + this.partitionId + "] indexing " + objId);
-                }
+//                if (obj.get("model").equals("Customer")) {
+////                    System.out.println("[SERVER" + this.partitionId + "] indexing " + objId);
+//                }
                 if (this.partitionId == dest || obj.get("model").equals("Item")) {
                     TpccCommandPayload payload = new TpccCommandPayload(obj);
                     createObject(objId, payload);
@@ -116,7 +116,7 @@ public class TpccServer extends PartitionStateMachine {
                 } else {
                     PRObjectNode node = indexObject(objId, dest);
 //                    log.info("[SERVER" + this.partitionId + "] indexing only " + objId);
-                    node.setOwnerPartitionId(dest);
+                    node.setPartitionId(dest);
                 }
             });
             byte[] objectGraph = codec.getBytes(this.objectGraph);
@@ -210,7 +210,7 @@ public class TpccServer extends PartitionStateMachine {
                     NewOrder newOrder = new NewOrder(w_id, d_id, district.d_next_o_id);
                     newOrder.setId(new ObjId(nextObjId.getAndIncrement()));
                     PRObjectNode newOrderNode = indexObject(newOrder, this.partitionId);
-                    newOrderNode.setOwnerPartitionId(this.partitionId);
+                    newOrderNode.setPartitionId(this.partitionId);
                     districtNode.addDependencyIds(newOrderNode);
                     List<String> keys = Row.genStrObjId(newOrder.toHashMap());
 //                    System.out.println("NewOrder Keys:" + newOrder.getId() + " - " + keys);
@@ -225,7 +225,7 @@ public class TpccServer extends PartitionStateMachine {
                     order.o_ol_cnt = o_ol_cnt;
                     order.o_all_local = o_all_local;
                     PRObjectNode orderNode = indexObject(order, this.partitionId);
-                    orderNode.setOwnerPartitionId(this.partitionId);
+                    orderNode.setPartitionId(this.partitionId);
                     districtNode.addDependencyIds(orderNode);
                     keys = Row.genStrObjId(order.toHashMap());
                     for (String key : keys) {
@@ -263,7 +263,7 @@ public class TpccServer extends PartitionStateMachine {
                         assert stock != null;
 
                         int s_remote_cnt_increment;
-                    log.debug("cmd {} retriving stock w_id={} i_id={} stock {}", command.getId(),ol_supply_w_id, ol_i_id, stock);
+//                    log.debug("cmd {} retriving stock w_id={} i_id={} stock {}", command.getId(),ol_supply_w_id, ol_i_id, stock);
                         stockQuantities.set(ol_number - 1, stock.s_quantity);
                         if (stock.s_quantity - ol_quantity >= 10) {
                             stock.s_quantity -= ol_quantity;
@@ -325,7 +325,7 @@ public class TpccServer extends PartitionStateMachine {
                         OrderLine orderLine = new OrderLine(w_id, d_id, district.d_next_o_id, ol_number);
                         orderLine.setId(new ObjId(nextObjId.getAndIncrement()));
                         PRObjectNode orderLineNode = indexObject(orderLine, this.partitionId);
-                        orderLineNode.setOwnerPartitionId(this.partitionId);
+                        orderLineNode.setPartitionId(this.partitionId);
                         districtNode.addDependencyIds(orderLineNode);
                         keys = Row.genStrObjId(orderLine.toHashMap());
                         for (String key : keys) {
@@ -419,7 +419,7 @@ public class TpccServer extends PartitionStateMachine {
                     history.h_data = h_data;
                     history.setId(new ObjId(nextObjId.getAndIncrement()));
                     PRObjectNode historyNode = indexObject(history, this.partitionId);
-                    historyNode.setOwnerPartitionId(this.partitionId);
+                    historyNode.setPartitionId(this.partitionId);
                     districtNode.addDependencyIds(historyNode);
                     return new Message("OK");
                 }
@@ -478,7 +478,7 @@ public class TpccServer extends PartitionStateMachine {
                         // remove the oldest new order
                         ObjId no_objId_delete = (ObjId) params.get("newOrderObjId_" + districtID);
                         if (no_objId_delete == null) {
-                            System.out.println("w_id=" + terminalWarehouseID + ":d_id=" + districtID + " - partition " + getPartitionId() + " can't find " + ("newOrderObjId_" + districtID));
+//                            System.out.println("w_id=" + terminalWarehouseID + ":d_id=" + districtID + " - partition " + getPartitionId() + " can't find " + ("newOrderObjId_" + districtID));
                             break;
                         }
 //                        if (no_objId_delete==null)System.out.println("partition " + getPartitionId() + " can't find NewOrder for w=" + terminalWarehouseID + ":d=" + districtID);
@@ -599,7 +599,7 @@ public class TpccServer extends PartitionStateMachine {
                 objId.setSId(((Row) xyz).getObjIdString());
                 ((PRObject) xyz).setId(objId);
                 PRObjectNode node = indexObject((PRObject) xyz, partitionId);
-                node.setOwnerPartitionId(partitionId);
+                node.setPartitionId(partitionId);
                 if (!modelName.equals("District") && !modelName.equals("Warehouse") && !modelName.equals("Item")) {
                     node.setTransient(true);
                     int w_id = 0, d_id = 1;
@@ -646,7 +646,7 @@ public class TpccServer extends PartitionStateMachine {
             objId.setSId(((Row) value).getObjIdString());
             ((PRObject) value).setId(objId);
             PRObjectNode node = indexObject((PRObject) value, partitionId);
-            node.setOwnerPartitionId(partitionId);
+            node.setPartitionId(partitionId);
             return (PRObject) value;
         }
     }
