@@ -13,6 +13,7 @@ import ch.usi.dslab.lel.dynastarv2.probject.PRObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.BinaryJedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -162,6 +163,7 @@ public class TpccOracle extends OracleStateMachine {
         System.out.println("Creating connection to redis host " + redisHost);
         BinaryJedis jedis = new BinaryJedis(redisHost, 6379, 600000);
         Codec codec = new CodecUncompressedKryo();
+        boolean redisAvailabled = true;
         byte[] keyObjectGraph = (fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_objectGraph").getBytes();
         byte[] keySecondaryIndex = (fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_secondaryIndex").getBytes();
         byte[] keyDataLoaded = (fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_data_loaded").getBytes();
@@ -174,6 +176,9 @@ public class TpccOracle extends OracleStateMachine {
                 this.objectGraph.setLogger(this.logger);
                 cacheLoaded = true;
             }
+        } catch (JedisConnectionException e) {
+            log.info("[ORACLE" + this.partitionId + "] Redis Cache is not available. Loading from file");
+            redisAvailabled = false;
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
@@ -191,9 +196,12 @@ public class TpccOracle extends OracleStateMachine {
                     this.objectGraph.addNode(node);
                 }
             });
-            jedis.set(keyObjectGraph, codec.getBytes(this.objectGraph));
-            jedis.set(keySecondaryIndex, codec.getBytes(this.secondaryIndex));
-            jedis.set(keyDataLoaded, new String("OK").getBytes());
+            if (redisAvailabled) {
+                jedis.set(keyObjectGraph, codec.getBytes(this.objectGraph));
+                jedis.set(keySecondaryIndex, codec.getBytes(this.secondaryIndex));
+                jedis.set(keyDataLoaded, new String("OK").getBytes());
+            }
+
         }
 
         System.out.println("[ORACLE" + this.partitionId + "] Data loaded, takes " + (System.currentTimeMillis() - start));

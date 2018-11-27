@@ -16,6 +16,7 @@ import ch.usi.dslab.lel.dynastarv2.probject.PRObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.BinaryJedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
@@ -78,6 +79,7 @@ public class TpccServer extends PartitionStateMachine {
         String[] fileNameParts = file.split("/");
         String fileName = fileNameParts[fileNameParts.length - 1];
         Integer partitionCount = Partition.getPartitionsCount();
+        boolean redisAvailabled = true;
         log.info("Creating connection to redis host " + redisHost);
         BinaryJedis jedis = new BinaryJedis(redisHost, 6379, 600000);
         Codec codec = new CodecUncompressedKryo();
@@ -96,6 +98,9 @@ public class TpccServer extends PartitionStateMachine {
                 this.objectGraph.setLogger(this.logger);
                 cacheLoaded = true;
             }
+        } catch (JedisConnectionException e) {
+            log.info("[SERVER" + this.partitionId + "] Redis Cache is not available. Loading from file");
+            redisAvailabled = false;
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
@@ -122,9 +127,12 @@ public class TpccServer extends PartitionStateMachine {
             byte[] objectGraph = codec.getBytes(this.objectGraph);
             byte[] secondaryIndex = codec.getBytes(this.secondaryIndex);
             log.info("[SERVER" + this.partitionId + "] writing data length: objectGraph=" + objectGraph.length + " - secondaryIndex=" + secondaryIndex.length);
-            jedis.set(keyObjectGraph, objectGraph);
-            jedis.set(keySecondaryIndex, codec.getBytes(this.secondaryIndex));
-            jedis.set(keyDataLoaded, new String("OK").getBytes());
+            if (redisAvailabled) {
+                jedis.set(keyObjectGraph, objectGraph);
+                jedis.set(keySecondaryIndex, codec.getBytes(this.secondaryIndex));
+                jedis.set(keyDataLoaded, new String("OK").getBytes());
+
+            }
         }
 
         log.info("[SERVER" + this.partitionId + "] Data loaded, takes " + (System.currentTimeMillis() - start));

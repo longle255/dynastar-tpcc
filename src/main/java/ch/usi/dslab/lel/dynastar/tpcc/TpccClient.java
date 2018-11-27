@@ -18,6 +18,7 @@ import ch.usi.dslab.lel.dynastarv2.probject.PRObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.BinaryJedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -168,6 +169,7 @@ public class TpccClient {
         BinaryJedis jedis = new BinaryJedis(redisHost);
         Codec codec = new CodecUncompressedKryo();
         long start = System.currentTimeMillis();
+        boolean redisAvailabled = true;
         byte[] keyObjectGraph = (fileName + "_p_" + partitionCount + "_CLIENT_" + this.clientProxy.getId() + "_objectGraph").getBytes();
         byte[] keySecondaryIndex = (fileName + "_p_" + partitionCount + "_CLIENT_" + this.clientProxy.getId() + "_secondaryIndex").getBytes();
         byte[] keyDataLoaded = (fileName + "_p_" + partitionCount + "_CLIENT_" + this.clientProxy.getId() + "_data_loaded").getBytes();
@@ -180,6 +182,9 @@ public class TpccClient {
                 this.clientProxy.setSecondaryIndex((HashMap<String, Set<ObjId>>) codec.createObjectFromBytes(jedis.get(keySecondaryIndex)));
                 cacheLoaded = true;
             }
+        } catch (JedisConnectionException e) {
+            System.out.println("[CLIENT" + this.clientProxy.getId() + "] Redis Cache is not available. Loading from file");
+            redisAvailabled = false;
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
@@ -191,9 +196,11 @@ public class TpccClient {
                 PRObjectNode node = new PRObjectNode(objId, dest);
                 this.clientProxy.getCache().addNode(node);
             });
-            jedis.set(keyObjectGraph, codec.getBytes(this.clientProxy.getCache()));
-            jedis.set(keySecondaryIndex, codec.getBytes(this.clientProxy.getSecondaryIndex()));
-            jedis.set(keyDataLoaded, new String("OK").getBytes());
+            if (redisAvailabled) {
+                jedis.set(keyObjectGraph, codec.getBytes(this.clientProxy.getCache()));
+                jedis.set(keySecondaryIndex, codec.getBytes(this.clientProxy.getSecondaryIndex()));
+                jedis.set(keyDataLoaded, new String("OK").getBytes());
+            }
         }
         System.out.println("[CLIENT-" + this.clientProxy.getId() + "] Data loaded, takes " + (System.currentTimeMillis() - start));
     }

@@ -50,7 +50,7 @@ public class TpccDataGenerator {
         System.out.print("Number of item:");
         input = scan.nextLine();
         int itemCount = Integer.parseInt(input);
-        String filePath = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/";
+        String filePath = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/";
 //        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/";
         TpccDataGenerator generator = new TpccDataGenerator(filePath, warehouseCount, districtCount, customerCount, itemCount);
         generator.generateCSVData();

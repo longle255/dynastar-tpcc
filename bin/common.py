@@ -29,7 +29,6 @@ def noderange(first, last):
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-EXPERIMENT_DURATION = 180
 EXPERIMENT_DURATION = 120  # 300 for 2,4, 360 for 8
 EXPERIMENT_WARMUP_MS = 50000  # ms //70 for 2,4 100 for 8 16
 EXPERIMENT_WARMUP_MS = 100  # ms
@@ -47,13 +46,13 @@ if not ENV_EC2 and not ENV_CLUSTER: ENV_LOCALHOST = True
 LOCALHOST_NODES = []
 for i in range(1, 50): LOCALHOST_NODES.append("127.0.0.1")
 
-DEAD_NODES = [41, 44, 51, 53, 68, 69, 77, 81, 89, 83, 60]
-NODES_RANGE_FIRST = 1
-NODES_RANGE_LAST = 40
+DEAD_NODES = [41, 68]
+NODES_RANGE_FIRST = 71
+NODES_RANGE_LAST = 88
 PROFILING_PATH = "/home/long/softwares/yjp-2017.02/bin/linux-x86-64/libyjpagent.so"
 
-DEBUGGING = False
 DEBUGGING = True
+DEBUGGING = False
 
 PROFILING = True
 PROFILING = False
@@ -82,9 +81,8 @@ elif ENV_EC2:
     f = open(os.path.normpath(script_dir() + '/../../bin/aws/instances.dat'), 'r')
     NODES = [val.rstrip('\n') for val in f.readlines()]
 else:
-    REMOTE_ENV = " LD_LIBRARY_PATH=/home/" + USERNAME + "/.local/lib:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib LD_PRELOAD=/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevamcast.so:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevmcast.so"
+    REMOTE_ENV = " LD_LIBRARY_PATH=/home/" + USERNAME + "/.local/lib:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libevent_pthreads-2.1.so.6:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevamcast.so:/home/" + USERNAME + "/apps/ScalableSMR/libjmcast/libmcast/build/local/lib/libevmcast.so"
     NODES = noderange(NODES_RANGE_FIRST, NODES_RANGE_LAST)
-    NODES = noderange(1, 34) + noderange(41, 60)
 
 RUNNING_MODE_DYNASTAR = "DYNASTAR"
 RUNNING_MODE_SSMR = "SSMR"
@@ -400,7 +398,7 @@ def getJavaExec(node, role):
             return java + " -XX:+UseG1GC -Xmx3g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
     if role == 'SERVER':
         if ENV_CLUSTER:
-            return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+            return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms2g -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
         if ENV_EC2:
             return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
 

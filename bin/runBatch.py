@@ -16,7 +16,7 @@ data_file_template = common.BIN_HOME + "/databases/w_16_d_10_c_20_i_100.data"
 data_file_template = common.BIN_HOME + "/databases/w_{}_d_10_c_3000_i_100000.data"
 data_file_template = common.BIN_HOME + "/databases/w_{}_d_10_c_20_i_100.data"
 
-loads = [4] #number of load equal number of warehouses
+loads = [2] #number of load equal number of warehouses
 
 preloadData = "True"
 
@@ -27,12 +27,12 @@ partitionings = [16]
 partitionings = [4, 8, 16]
 partitionings = [16]
 partitionings = [4, 8, 16]
-partitionings = [4]
+partitionings = [2]
 
 runCount = 1
 
 workloads = {
-    # "default": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 4},
+    "default": {"wNO": 45, "wP": 43, "wD": 4, "wOS": 4, "wSL": 4},
     # "default": {"wNO": 45, "wP": 0, "wD": 4, "wOS": 4, "wSL": 4},
     # "exceptNO": {"wNO":0, "wP":50, "wD":4, "wOS":4, "wSL":4},
     # "exceptNO_SL": {"wNO":0, "wP":50, "wD":4, "wOS":4, "wSL":0},
@@ -44,11 +44,11 @@ workloads = {
     # "P_D_SL": {"wNO":0, "wP":50, "wD":50, "wOS":0, "wSL":50},
     # "D_OS_SL": {"wNO":0, "wP":0, "wD":50, "wOS":50, "wSL":50},
     # "NO_D_OS_SL": {"wNO":45, "wP":0, "wD":4, "wOS":4, "wSL":4},
-    "pureNO": {"wNO": 100, "wP": 0, "wD": 0, "wOS": 0, "wSL": 0},
-    "pureP": {"wNO": 0, "wP": 100, "wD": 0, "wOS": 0, "wSL": 0},
-    "pureD": {"wNO": 0, "wP": 0, "wD": 100, "wOS": 0, "wSL": 0},
-    "pureOS": {"wNO": 0, "wP": 0, "wD": 0, "wOS": 100, "wSL": 0},
-    "pureSL": {"wNO":0, "wP":0, "wD":0, "wOS":0, "wSL":100},
+    # "pureNO": {"wNO": 100, "wP": 0, "wD": 0, "wOS": 0, "wSL": 0},
+    # "pureP": {"wNO": 0, "wP": 100, "wD": 0, "wOS": 0, "wSL": 0},
+    # "pureD": {"wNO": 0, "wP": 0, "wD": 100, "wOS": 0, "wSL": 0},
+    # "pureOS": {"wNO": 0, "wP": 0, "wD": 0, "wOS": 100, "wSL": 0},
+    # "pureSL": {"wNO":0, "wP":0, "wD":0, "wOS":0, "wSL":100},
 }
 
 MODES = [common.RUNNING_MODE_SSMR]
