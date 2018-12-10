@@ -24,15 +24,19 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TpccServer extends PartitionStateMachine {
     public static final Logger log = LoggerFactory.getLogger(TpccServer.class);
-    private AtomicInteger nextObjId = new AtomicInteger(0);
+    private AtomicLong nextObjId = new AtomicLong(0);
     private AtomicInteger exceptionCount = new AtomicInteger(0);
 
     public TpccServer(int replicaId, String systemConfig, String partitionsConfig, TpccProcedure appProcedure) {
         super(replicaId, systemConfig, partitionsConfig, appProcedure);
-        this.setFeedbackInterval(50);
+//        this.setFeedbackInterval(50);
+        this.setFeedbackInterval_ms(10000);
+        this.setRecurringFeedback(false); // change to false in normal test
+        this.setHyperGraph(false);
     }
 
     public static void main(String[] args) {
@@ -70,7 +74,7 @@ public class TpccServer extends PartitionStateMachine {
             e.printStackTrace();
         }
         if (hostName.indexOf("node") == 0) {
-            redisHost = "192.168.3.91";
+            redisHost = "192.168.3.45";
         } else {
             redisHost = "127.0.0.1";
         }
@@ -114,6 +118,10 @@ public class TpccServer extends PartitionStateMachine {
 //                if (obj.get("model").equals("Customer")) {
 ////                    System.out.println("[SERVER" + this.partitionId + "] indexing " + objId);
 //                }
+                if (this.objectGraph.getNode(objId) != null) {
+                    System.out.println("Duplicated ID:" + objId);
+                    System.exit(1);
+                }
                 if (this.partitionId == dest || obj.get("model").equals("Item")) {
                     TpccCommandPayload payload = new TpccCommandPayload(obj);
                     createObject(objId, payload);
@@ -170,20 +178,31 @@ public class TpccServer extends PartitionStateMachine {
                     return new Message(node);
                 }
                 case NEW_ORDER: {
+
+                    ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+                    ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                    ObjId customerObjId = (ObjId) params.get("c_obj_id");
+                    int numItems = (int) params.get("ol_o_cnt");
+                    int allLocal = (int) params.get("o_all_local");
+                    Set<ObjId> itemObjIds = (HashSet) params.get("itemObjIds");
+                    Set<ObjId> supplierWarehouseObjIds = (Set<ObjId>) params.get("supplierWarehouseObjIds");
+                    Set<ObjId> stockObjIds = (Set<ObjId>) params.get("stockIds");
+
+//
                     int w_id = (int) params.get("w_id");
                     int d_id = (int) params.get("d_id");
                     int c_id = (int) params.get("c_id");
                     int o_ol_cnt = (int) params.get("ol_o_cnt");
                     int o_all_local = (int) params.get("o_all_local");
                     int[] itemIDs = (int[]) params.get("itemIds");
-                    int[] supplierWarehouseIDs = (int[]) params.get("supplierWarehouseIDs");
+                    int[] supplierWarehouseIds = (int[]) params.get("supplierWarehouseIds");
                     int[] orderQuantities = (int[]) params.get("orderQuantities");
-                    ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", w_id)).iterator().next();
-                    ObjId districtObjId = secondaryIndex.get(Row.genSId("District", w_id, d_id)).iterator().next();
+//                    ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", w_id)).iterator().next();
+//                    ObjId districtObjId = secondaryIndex.get(Row.genSId("District", w_id, d_id)).iterator().next();
                     //TODO testing
 //                    ObjId customerObjId = secondaryIndex.get(Row.genSId("Customer", w_id, d_id, c_id)).iterator().next();
-                    ObjId customerObjId = new ObjId(Row.genSId("Customer", w_id, d_id, c_id));
-                    log.debug("cmd {} NewOrder: w_id={} d_id={} c_id={} o_ol_cnt={} o_all_local={} itemIds={} supplierWarehouseIDs={} orderQuantities={}", command.getId(), w_id, d_id, c_id, o_ol_cnt, o_all_local, itemIDs, supplierWarehouseIDs, orderQuantities);
+//                    ObjId customerObjId = new ObjId(Row.genSId("Customer", w_id, d_id, c_id));
+                    log.debug("cmd {} NewOrder: w_id={} d_id={} c_id={} o_ol_cnt={} o_all_local={} itemIds={} supplierWarehouseIds={} orderQuantities={}", command.getId(), w_id, d_id, c_id, o_ol_cnt, o_all_local, itemIDs, supplierWarehouseIds, orderQuantities);
 
                     final List<Double> itemPrices = Arrays.asList(new Double[o_ol_cnt + 1]);
                     final List<String> itemNames = Arrays.asList(new String[o_ol_cnt + 1]);
@@ -244,7 +263,7 @@ public class TpccServer extends PartitionStateMachine {
                     // For each O_OL_CNT item on the order:
                     for (int index = 1; index <= o_ol_cnt; index++) {
                         int ol_number = index;
-                        int ol_supply_w_id = supplierWarehouseIDs[ol_number - 1];
+                        int ol_supply_w_id = supplierWarehouseIds[ol_number - 1];
                         int ol_i_id = itemIDs[ol_number - 1];
                         int ol_quantity = orderQuantities[ol_number - 1];
                         // If I_ID has an unused value (see Clause 2.4.1.5), a "not-found" condition is signaled,
@@ -257,6 +276,9 @@ public class TpccServer extends PartitionStateMachine {
 
                         // The row in the ITEM table with matching I_ID (equals OL_I_ID) is selected
                         // and I_PRICE, the price of the item, I_NAME, the name of the item, and I_DATA are retrieved.
+                        if (secondaryIndex.get(Row.genSId("Item", ol_i_id)) == null) {
+                            return new Message("TRANSACTION_ARBOTED");
+                        }
                         ObjId itemObjId = secondaryIndex.get(Row.genSId("Item", ol_i_id)).iterator().next();
                         Item item = (Item) getObject(itemObjId);
                         assert item != null;
@@ -268,7 +290,9 @@ public class TpccServer extends PartitionStateMachine {
 //                        ObjId stockObjId = secondaryIndex.get(Row.genSId("Stock", ol_supply_w_id, ol_i_id)).iterator().next();
                         ObjId stockObjId = new ObjId(Row.genSId("Stock", ol_supply_w_id, ol_i_id));
                         Stock stock = (Stock) getObject(stockObjId);
-                        assert stock != null;
+                        if (stock == null) {
+                            return new Message("TRANSACTION_ARBOTED");
+                        }
 
                         int s_remote_cnt_increment;
 //                    log.debug("cmd {} retriving stock w_id={} i_id={} stock {}", command.getId(),ol_supply_w_id, ol_i_id, stock);
@@ -355,8 +379,8 @@ public class TpccServer extends PartitionStateMachine {
                 case PAYMENT: {
                     int terminalWarehouseID = (int) params.get("w_id");
                     int districtID = (int) params.get("d_id");
-                    ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-                    ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
+                    ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                    ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
 
                     int customerWarehouseID = (int) params.get("c_w_id");
                     int customerDistrictID = (int) params.get("c_d_id");
@@ -368,10 +392,7 @@ public class TpccServer extends PartitionStateMachine {
                     int customerID = -1;
                     if (customerByName) customerObjId = (ObjId) params.get("c_objId");
                     else {
-                        customerID = (int) params.get("c_id");
-                        //todo testing
-                        customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID)).iterator().next();
-//                        customerObjId = new ObjId(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID));
+                        customerObjId = (ObjId) params.get("c_obj_id");
                     }
 
                     float amount = (float) params.get("amount");
@@ -399,7 +420,10 @@ public class TpccServer extends PartitionStateMachine {
                         log.error("cmd {} can't find customer", command.getId());
                         throw new RuntimeException("ERR");
                     }
-                    assert customer != null;
+                    if (customer == null) {
+                        return new Message("TRANSACTION_ARBOTED");
+                    }
+                    logger.debug("cmd {} PAYMENT customer: {}", command.getId(), customer);
 
                     customer.c_balance -= amount;
                     customer.c_payment_cnt += 1;
@@ -471,54 +495,63 @@ public class TpccServer extends PartitionStateMachine {
                     int terminalWarehouseID = (int) params.get("w_id");
                     final ObjId orderIDs[] = new ObjId[TpccConfig.configDistPerWhse];
                     int o_carrier_id = (int) params.get("o_carrier_id");
-                    ObjId warehouseObjId = new ObjId(Row.genSId("Warehouse", terminalWarehouseID));
-//                    ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
+                    ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
                     Warehouse warehouse = (Warehouse) getObject(warehouseObjId);
                     assert warehouse != null;
-
-                    for (int districtID = 1; districtID <= TpccConfig.configDistPerWhse; districtID++) {
-                        ObjId districtObjId = new ObjId(Row.genSId("District", terminalWarehouseID, districtID));
-
-//                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
+                    Set<ObjId> districtObjIds = (HashSet) params.get("d_obj_ids");
+                    for (ObjId districtObjId : districtObjIds) {
+                        int districtID = Integer.parseInt(districtObjId.getSId().split(":")[2].split("=")[1]);
+                        logger.debug("cmd {} DELIVERY: District={}", command.getId(), districtObjId);
                         District district = (District) getObject(districtObjId);
                         assert district != null;
 
-                        // remove the oldest new order
-                        ObjId no_objId_delete = (ObjId) params.get("newOrderObjId_" + districtID);
-                        if (no_objId_delete == null) {
-//                            System.out.println("w_id=" + terminalWarehouseID + ":d_id=" + districtID + " - partition " + getPartitionId() + " can't find " + ("newOrderObjId_" + districtID));
+
+                        String newOrdersKey = Row.genSId("NewOrder", terminalWarehouseID, districtID);
+                        logger.debug("cmd {} DELIVERY: NewOrder={}", command.getId(), newOrdersKey);
+                        if (secondaryIndex.get(newOrdersKey) != null) {
+                            ObjId newOrderObjId;
+                            newOrderObjId = secondaryIndex.get(newOrdersKey).iterator().next();
+
+                            //TODO: find a work around for this: removed borrowed object
+//                            markToRemove(this.objectGraph.getNode(newOrderObjId));
+                            orderIDs[districtID - 1] = newOrderObjId;
+
+
+                            String orderIdKey = Row.genSId("Order", terminalWarehouseID, districtID, -1, newOrderObjId.getSId().split(":")[3].split("=")[1]);
+                            logger.debug("cmd {} DELIVERY: orderIdKey={}", command.getId(), orderIdKey);
+                            if (secondaryIndex.get(orderIdKey) == null) {
+                                System.out.println("ERROR: Can't find order " + orderIdKey);
+                                command.setInvalid(true);
+                                return new Message("TRANSACTION_ARBOTED");
+                            }
+                            ObjId orderObjId = secondaryIndex.get(orderIdKey).iterator().next();
+                            Order order = (Order) getObject(orderObjId);
+                            if (order==null) logger.error("cmd {} DELIVERY: Order={} nullll", command.getId(), orderIdKey);
+                            order.o_carrier_id = o_carrier_id;
+
+
+                            String orderLineKey = Row.genSId("OrderLine", terminalWarehouseID, districtID, orderObjId.getSId().split(":")[4].split("=")[1]);
+                            logger.debug("cmd {} DELIVERY: orderLineKey={}", command.getId(), orderLineKey);
+                            double total = 0;
+                            if (secondaryIndex.get(orderLineKey) != null) {
+                                Set<ObjId> orderLineObjIds = secondaryIndex.get(orderLineKey);
+                                for (ObjId orderLineObjId : orderLineObjIds) {
+                                    OrderLine orderLine = (OrderLine) getObject(orderLineObjId);
+                                    assert orderLine != null;
+                                    orderLine.ol_delivery_d = System.currentTimeMillis();
+                                    total += orderLine.ol_amount;
+                                }
+                            }
+
+                            String customerKey = Row.genSId("Customer", terminalWarehouseID, districtID, Integer.parseInt(orderObjId.getSId().split(":")[3].split("=")[1]));
+                            logger.debug("cmd {} DELIVERY: customerKey={}", command.getId(), customerKey);
+                            ObjId customerObjId = secondaryIndex.get(customerKey).iterator().next();
+                            Customer customer = (Customer) getObject(customerObjId);
+                            assert customer != null;
+                            customer.c_balance += total;
+                        } else {
                             break;
                         }
-//                        if (no_objId_delete==null)System.out.println("partition " + getPartitionId() + " can't find NewOrder for w=" + terminalWarehouseID + ":d=" + districtID);
-                        orderIDs[districtID - 1] = no_objId_delete;
-
-                        //TODO: find a work around for this: removed borrowed object
-//                        markToRemove(this.objectGraph.getNode(no_objId_delete));
-
-                        // find the corresponding order and update o_carrier_id
-                        ObjId orderObjId = (ObjId) params.get("orderObjId_" + districtID);
-                        if (orderObjId == null) {
-                            System.out.println("w_id=" + terminalWarehouseID + ":d_id=" + districtID + " - partition " + getPartitionId() + " can't find " + Row.genSId("Order", terminalWarehouseID, districtID, -1, no_objId_delete));
-                            break;
-                        }
-                        Order order = (Order) getObject(orderObjId);
-                        assert order != null;
-                        order.o_carrier_id = o_carrier_id;
-
-                        //update corresponding orderline
-                        Set<ObjId> orderLineObjIds = (Set<ObjId>) params.get("orderLineObjIds_" + districtID);
-                        double total = 0;
-                        for (ObjId orderLineObjId : orderLineObjIds) {
-                            OrderLine orderLine = (OrderLine) getObject(orderLineObjId);
-                            assert orderLine != null;
-                            orderLine.ol_delivery_d = System.currentTimeMillis();
-                            total += orderLine.ol_amount;
-                        }
-
-                        ObjId customerObjId = (ObjId) params.get("customerObjId_" + districtID);
-                        Customer customer = (Customer) getObject(customerObjId);
-                        assert customer != null;
-                        customer.c_balance += total;
                     }
 
                     return new Message("OK");
@@ -634,7 +667,9 @@ public class TpccServer extends PartitionStateMachine {
                         ObjId districtObjId = secondaryIndex.get(Row.genSId("District", w_id, d_id)).iterator().next();
                         PRObjectNode districtNode = this.objectGraph.getNode(districtObjId);
                         assert districtNode != null;
-                        log.debug("Creating object {} with id={} sid={} belongs to {}", modelName, objId.value, objId.getSId(), districtObjId);
+//                        log.debug("Creating object {} with id={} sid={} belongs to {}", modelName, objId.value, objId.getSId(), districtObjId);
+//                        if (modelName.equals("Customer"))
+//                            System.out.println("[" + partitionId + "] Creating object " + modelName + " with id=" + objId.value + " sId=" + objId.getSId());
                         districtNode.addDependencyIds(node);
                     } catch (Exception e) {
                         System.out.println("ERROR getting " + Row.genSId("District", w_id, d_id));
@@ -643,7 +678,7 @@ public class TpccServer extends PartitionStateMachine {
                     node.setTransient(true);
                     node.setReplicated(true);
                 } else {
-                    log.debug("Creating object {} with id={} sId={}", modelName, objId.value, objId.getSId());
+
                 }
                 return (PRObject) xyz;
             } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException | NullPointerException e) {

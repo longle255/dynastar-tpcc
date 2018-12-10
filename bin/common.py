@@ -29,7 +29,7 @@ def noderange(first, last):
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-EXPERIMENT_DURATION = 120  # 300 for 2,4, 360 for 8
+EXPERIMENT_DURATION = 360  # 300 for 2,4, 360 for 8
 EXPERIMENT_WARMUP_MS = 50000  # ms //70 for 2,4 100 for 8 16
 EXPERIMENT_WARMUP_MS = 100  # ms
 
@@ -47,7 +47,7 @@ LOCALHOST_NODES = []
 for i in range(1, 50): LOCALHOST_NODES.append("127.0.0.1")
 
 DEAD_NODES = [41, 68]
-NODES_RANGE_FIRST = 71
+NODES_RANGE_FIRST = 65
 NODES_RANGE_LAST = 88
 PROFILING_PATH = "/home/long/softwares/yjp-2017.02/bin/linux-x86-64/libyjpagent.so"
 
@@ -398,7 +398,7 @@ def getJavaExec(node, role):
             return java + " -XX:+UseG1GC -Xmx3g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
     if role == 'SERVER':
         if ENV_CLUSTER:
-            return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms2g -Xmx2g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+            return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms3g -Xmx3g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
         if ENV_EC2:
             return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms7g -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
 

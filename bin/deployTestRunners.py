@@ -96,7 +96,6 @@ for i in range(len(clientDistrict)):
         clientI[j] = "w=" + str(tmp[0]) + ":d=" + str(tmp[1])
     clientDistrict[i] = "_".join([str(val) for val in (clientI)])
 
-print 'AAAAA', clientDistrict
 for mapping in clientMapping:
     if mapping[CLIENTS] == 0:
         continue

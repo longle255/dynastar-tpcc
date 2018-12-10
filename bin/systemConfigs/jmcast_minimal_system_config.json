@@ -70,7 +70,7 @@
       "group_id": 2
     }
   ],
-  "jmcast_config_file": "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarV2/bin/systemConfigs/jmcast_mcast.conf",
+  "jmcast_config_file": "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/systemConfigs/jmcast_mcast.conf",
   "group_members": [
     {
       "group": 0,
@@ -106,5 +106,5 @@
   "rmcast_agent_class": "SimpleReliableMulticastAgent",
   "agent_class": "JMcastAgent",
   "delta_null_messages_ms": 5,
-  "paxos_config_file": "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarV2/bin/systemConfigs/jmcast_paxos.conf"
+  "paxos_config_file": "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/systemConfigs/jmcast_paxos.conf"
 }

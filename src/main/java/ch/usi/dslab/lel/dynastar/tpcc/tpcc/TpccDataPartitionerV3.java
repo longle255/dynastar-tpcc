@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import static ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil.mapStockToDistrict;
 
@@ -56,15 +57,31 @@ public class TpccDataPartitionerV3 {
 
     public static void main(String args[]) {
         int index = 0;
-//        String file = args[index++];
-        int numPartition = Integer.parseInt(args[index++]);
+        System.out.println("Creating dataset for jTPCC. Enter required information");
+        Scanner scan = new Scanner(System.in);
+        String input;
+        System.out.print("Number of warehouses:");
+        input = scan.nextLine();
+        int warehouseCount = Integer.parseInt(input);
+        System.out.print("Number of district per warehouse:");
+        input = scan.nextLine();
+        int districtCount = Integer.parseInt(input);
+        System.out.print("Number of customer per district:");
+        input = scan.nextLine();
+        int customerCount = Integer.parseInt(input);
+        System.out.print("Number of item:");
+        input = scan.nextLine();
+        int itemCount = Integer.parseInt(input);
+        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + warehouseCount + "_d_" + districtCount + "_c_" + customerCount + "_i_" + itemCount + ".data";
+
+//        int numPartition = Integer.parseInt(args[index++]);
 //        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
+//        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + numPartition + "_d_10_c_20_i_100.data";
 
 
 //        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
 //        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
-        TpccDataPartitionerV3 app = new TpccDataPartitionerV3(file, numPartition);
+        TpccDataPartitionerV3 app = new TpccDataPartitionerV3(file, warehouseCount);
         app.split();
     }
 
@@ -95,7 +112,7 @@ public class TpccDataPartitionerV3 {
                     return;
                 }
 //                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse") || obj.get("model").equals("Customer")|| obj.get("model").equals("NewOrder")|| obj.get("model").equals("Order")|| obj.get("model").equals("OrderLine")) {
-                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse")||obj.get("model").equals("Customer")) {
+                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse")) {
 //                if (obj.get("model").equals("Item") || obj.get("model").equals("District") || obj.get("model").equals("Warehouse")) {
                     for (int i = 0; i < numPartition; i++) {
                         contents[i].append(line + "\n");

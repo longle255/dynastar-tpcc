@@ -105,7 +105,7 @@ mcastCmdPieces = [common.multicastDeployer, sysConfigFile]
 mcastCmdString = " ".join(mcastCmdPieces)
 localcmdbg(mcastCmdString)
 
-time.sleep(5)
+time.sleep(2)
 
 # # launch replicas
 serverCmdPieces = [common.tpccServerDeployer, sysConfigFile, partitioningFile,

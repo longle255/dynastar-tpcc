@@ -67,21 +67,31 @@ public class TpccProcedure implements AppProcedure {
             Map<String, Object> params = (Map<String, Object>) command.getItem(1);
             switch (cmdType) {
                 case NEW_ORDER:
-                case ORDER_STATUS:
-                case STOCK_LEVEL:
-                case PAYMENT: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    int districtId = (int) params.get("d_id");
-//                    System.out.println("looking for w_id=" + terminalWarehouseID + "  d_id=" + districtId + "  null=" + (secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtId)) == null));
-                    ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtId)).iterator().next();
-                    if (graph.getNode(districtObjId) != null) return false;
+                case PAYMENT:
+                case ORDER_STATUS: {
+                    ObjId terminalWarehouseID = (ObjId) params.get("w_obj_id");
+                    ObjId districtId = (ObjId) params.get("d_obj_id");
+                    if (graph.getNode(districtId) != null) return false;
                     break;
                 }
-
+                case STOCK_LEVEL: {
+                    ObjId terminalWarehouseID = (ObjId) params.get("w_obj_id");
+                    ObjId districtId = (ObjId) params.get("d_obj_id");
+                    if (graph.getNode(districtId) != null) return false;
+                    if (graph.getNode(terminalWarehouseID) != null) return false;
+                    Set<ObjId> districtObjIds = (HashSet) params.get("s_d_obj_ids");
+                    for (ObjId objId : districtObjIds) {
+                        if (graph.getNode(objId) != null) return false;
+                    }
+                    break;
+                }
                 case DELIVERY: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-                    if (graph.getNode(warehouseObjId) != null) return false;
+                    ObjId terminalWarehouseID = (ObjId) params.get("w_obj_id");
+                    if (graph.getNode(terminalWarehouseID) != null) return false;
+                    Set<ObjId> districtObjIds = (HashSet) params.get("d_obj_ids");
+                    for (ObjId objId : districtObjIds) {
+                        if (graph.getNode(objId) != null) return false;
+                    }
                     break;
                 }
                 default: {
@@ -93,361 +103,47 @@ public class TpccProcedure implements AppProcedure {
     }
 
     @Override
-    public void calculateMovingPlan(Command commandWrapper) {
-        int destPartId = (int) commandWrapper.getNext();
-        Map<Integer, Set<ObjId>> srcPartMap = (HashMap) commandWrapper.getNext();
-        Command command = (Command) commandWrapper.getNext();
-        Set<ObjId> existing = new HashSet<>();
-        Set<ObjId> missing = new HashSet<>();
+    public Map<Integer, Set<ObjId>> refineObjectId(Command command, Map<Integer, Set<ObjId>> srcPartMap, boolean includeAllPartition) {
+        command.rewind();
+        TpccCommandType cmdType = (TpccCommandType) command.getNext();
+        Map<String, Object> params = (Map<String, Object>) command.getItem(1);
+        switch (cmdType) {
+            case ORDER_STATUS:
+            case PAYMENT: {
 
-        try {
-            TpccCommandType cmdType = (TpccCommandType) command.getNext();
-            Map<String, Object> params = (Map<String, Object>) command.getItem(1);
-
-            switch (cmdType) {
-                case NEW_ORDER: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    int districtID = (int) params.get("d_id");
-                    int customerID = (int) params.get("c_id");
-                    int numItems = (int) params.get("ol_o_cnt");
-                    int allLocal = (int) params.get("o_all_local");
-                    int[] itemIDs = (int[]) params.get("itemIds");
-                    int[] supplierWarehouseIDs = (int[]) params.get("supplierWarehouseIDs");
-                    int[] orderQuantities = (int[]) params.get("orderQuantities");
-
-                    ObjId warehouseObjId = null, districtObjId = null, customerObjId = null;
-                    if (secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)) != null && secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).size() > 0)
-                        warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-
-                    if (warehouseObjId != null && graph.getNode(warehouseObjId) != null && graph.getNode(warehouseObjId).getPartitionId() == this.partitionId)
-                        existing.add(warehouseObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Warehouse", terminalWarehouseID)));
-
-                    if (secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)) != null && secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).size() > 0)
-                        districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                    if (districtObjId != null && graph.getNode(districtObjId) != null && graph.getNode(districtObjId).getPartitionId() == this.partitionId)
-                        existing.add(districtObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("District", terminalWarehouseID, districtID)));
-
-                    if (secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)) != null && secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)).size() > 0)
-                        customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)).iterator().next();
-                    if (customerObjId != null && graph.getNode(customerObjId) != null && graph.getNode(customerObjId).getPartitionId() == this.partitionId)
-                        existing.add(customerObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)));
-
-
-                    Set<ObjId> itemObjIds = new HashSet<>();
-                    for (int i = 0; i < numItems; i++) {
-                        if (!secondaryIndex.containsKey(Row.genSId("Item", itemIDs[i]))) {
-                            command.setInvalid(true);
-                            commandWrapper.setInvalid(true);
-                            return;
-                        }
-                        if (secondaryIndex.get(Row.genSId("Item", itemIDs[i])) != null && secondaryIndex.get(Row.genSId("Item", itemIDs[i])).size() > 0)
-                            itemObjIds.add(secondaryIndex.get(Row.genSId("Item", itemIDs[i])).iterator().next());
+                for (Map.Entry entry : srcPartMap.entrySet()) {
+                    if (!includeAllPartition && (int) entry.getKey() != partitionId) continue;
+                    boolean customerByName = (boolean) params.get("c_by_name");
+                    if (!customerByName) {
+                        break;
                     }
-
-                    for (int i = 0; i < numItems; i++) {
-                        ObjId supplierWarehouseObjId = null;
-                        if (secondaryIndex.get(Row.genSId("Warehouse", supplierWarehouseIDs[i])) != null && secondaryIndex.get(Row.genSId("Warehouse", supplierWarehouseIDs[i])).size() > 0)
-                            supplierWarehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", supplierWarehouseIDs[i])).iterator().next();
-
-                        if (supplierWarehouseObjId != null && graph.getNode(supplierWarehouseObjId) != null && graph.getNode(supplierWarehouseObjId).getPartitionId() == this.partitionId)
-                            existing.add(supplierWarehouseObjId);
-                        else
-                            missing.add(new ObjId(Row.genSId("Warehouse", supplierWarehouseIDs[i])));
-                    }
-
-
-                    for (int i = 0; i < numItems; i++) {
-                        ObjId stockObjId = null;
-                        if (secondaryIndex.get(Row.genSId("Stock", supplierWarehouseIDs[i], itemIDs[i])) != null && secondaryIndex.get(Row.genSId("Stock", supplierWarehouseIDs[i], itemIDs[i])).size() > 0)
-                            stockObjId = secondaryIndex.get(Row.genSId("Stock", supplierWarehouseIDs[i], itemIDs[i])).iterator().next();
-
-                        if (stockObjId != null && graph.getNode(stockObjId) != null && graph.getNode(stockObjId).getPartitionId() == this.partitionId)
-                            existing.add(stockObjId);
-                        else
-                            missing.add(new ObjId(Row.genSId("Stock", supplierWarehouseIDs[i], itemIDs[i])));
-                    }
-                    break;
-                }
-                case PAYMENT: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    int districtID = (int) params.get("d_id");
-
-                    ObjId warehouseObjId = null, districtObjId = null;
-                    if (secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)) != null && secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).size() > 0)
-                        warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-
-                    if (warehouseObjId != null && graph.getNode(warehouseObjId) != null && graph.getNode(warehouseObjId).getPartitionId() == this.partitionId)
-                        existing.add(warehouseObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Warehouse", terminalWarehouseID)));
-
-                    if (secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)) != null && secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).size() > 0)
-                        districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                    if (districtObjId != null && graph.getNode(districtObjId) != null && graph.getNode(districtObjId).getPartitionId() == this.partitionId)
-                        existing.add(districtObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("District", terminalWarehouseID, districtID)));
-
-
+                    logger.debug("Need to refine customerid for Payment. Before: " + srcPartMap);
                     int customerWarehouseID = (int) params.get("c_w_id");
                     int customerDistrictID = (int) params.get("c_d_id");
-                    ObjId customerWarehouseObjId = null, customerDistrictObjId = null;
 
-                    if (secondaryIndex.get(Row.genSId("Warehouse", customerWarehouseID)) != null && secondaryIndex.get(Row.genSId("Warehouse", customerWarehouseID)).size() > 0)
-                        customerWarehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", customerWarehouseID)).iterator().next();
-
-                    if (customerWarehouseObjId != null && graph.getNode(customerWarehouseObjId) != null && graph.getNode(customerWarehouseObjId).getPartitionId() == this.partitionId)
-                        existing.add(customerWarehouseObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Warehouse", customerWarehouseID)));
-
-                    if (secondaryIndex.get(Row.genSId("District", customerWarehouseID, customerDistrictID)) != null && secondaryIndex.get(Row.genSId("District", customerWarehouseID, customerDistrictID)).size() > 0)
-                        customerDistrictObjId = secondaryIndex.get(Row.genSId("District", customerWarehouseID, customerDistrictID)).iterator().next();
-                    if (customerDistrictObjId != null && graph.getNode(customerDistrictObjId) != null && graph.getNode(customerDistrictObjId).getPartitionId() == this.partitionId)
-                        existing.add(customerDistrictObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("District", customerWarehouseID, customerDistrictID)));
+                    String customerLastName = (String) params.get("c_name");
+                    ObjId customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)) != null ?
+                            secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)).iterator().next() : null;
 
 
-                    boolean customerByName = (boolean) params.get("c_by_name");
-                    if (!customerByName) {
-                        int customerID = (int) params.get("c_id");
-                        ObjId customerObjId = null;
-                        if (secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID)) != null && secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID)).size() > 0)
-                            customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID)).iterator().next();
-                        if (customerObjId != null && graph.getNode(customerObjId) != null && graph.getNode(customerObjId).getPartitionId() == this.partitionId)
-                            existing.add(customerObjId);
-                        else
-                            missing.add(new ObjId(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID)));
-                    } else {
-                        long seed = (long) params.get("randomSeed");
-                        Random r = new Random(seed);
-                        String customerLastName = TpccUtil.getLastName(r);
+                    Set<ObjId> objIds = (Set<ObjId>) entry.getValue();
+                    for (ObjId objId : objIds) {
+                        if (objId.sId.contains("Customer")) {
 
-                        ObjId customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)) != null ?
-                                secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)).iterator().next() : null;
-                        while (customerObjId == null) {
-                            customerLastName = TpccUtil.getLastName(r);
-                            if (secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)) == null)
-                                continue;
-                            customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)).iterator().next();
-                        }
-
-                        if (customerObjId != null && graph.getNode(customerObjId) != null && graph.getNode(customerObjId).getPartitionId() == this.partitionId)
-                            existing.add(customerObjId);
-                        else
-                            missing.add(customerObjId);
-                    }
-                    break;
-                }
-                case ORDER_STATUS: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    int districtID = (int) params.get("d_id");
-
-
-                    ObjId warehouseObjId = null, districtObjId = null;
-                    if (secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)) != null && secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).size() > 0)
-                        warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-
-                    if (warehouseObjId != null && graph.getNode(warehouseObjId) != null && graph.getNode(warehouseObjId).getPartitionId() == this.partitionId)
-                        existing.add(warehouseObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Warehouse", terminalWarehouseID)));
-
-                    if (secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)) != null && secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).size() > 0)
-                        districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                    if (districtObjId != null && graph.getNode(districtObjId) != null && graph.getNode(districtObjId).getPartitionId() == this.partitionId)
-                        existing.add(districtObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("District", terminalWarehouseID, districtID)));
-
-
-                    boolean customerByName = (boolean) params.get("c_by_name");
-                    ObjId customerObjId = null;
-                    if (!customerByName) {
-                        int customerID = (int) params.get("c_id");
-
-                        if (secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)) != null && secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)).size() > 0)
-                            customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)).iterator().next();
-                        if (customerObjId != null && graph.getNode(customerObjId) != null && graph.getNode(customerObjId).getPartitionId() == this.partitionId)
-                            existing.add(customerObjId);
-                        else
-                            missing.add(new ObjId(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)));
-                    } else {
-                        long seed = (long) params.get("randomSeed");
-                        Random r = new Random(seed);
-                        String customerLastName = TpccUtil.getLastName(r);
-
-                        customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)) != null ?
-                                secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)).iterator().next() : null;
-                        while (customerObjId == null) {
-                            customerLastName = TpccUtil.getLastName(r);
-                            if (secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)) == null)
-                                continue;
-                            customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)).iterator().next();
-                        }
-
-                        if (customerObjId != null && graph.getNode(customerObjId) != null && graph.getNode(customerObjId).getPartitionId() == this.partitionId)
-                            existing.add(customerObjId);
-                        else
-                            missing.add(customerObjId);
-                    }
-
-                    String ordersKey = Row.genSId("Order", terminalWarehouseID, districtID, customerObjId.getSId().split(":")[3].split("=")[1]);
-
-                    if (secondaryIndex.get(ordersKey) != null) {
-                        ObjId orderObjId = new ObjId(ordersKey);
-
-                        if (orderObjId != null && graph.getNode(orderObjId) != null && graph.getNode(orderObjId).getPartitionId() == this.partitionId)
-                            existing.add(orderObjId);
-                        else
-                            missing.add(orderObjId);
-
-                        String orderLineKey = Row.genSId("OrderLine", terminalWarehouseID, districtID, orderObjId.getSId().split(":")[4].split("=")[1]);
-                        if (secondaryIndex.get(orderLineKey) != null) {
-                            Set<ObjId> orderLines = secondaryIndex.get(orderLineKey);
-                            params.put("orderLineObjIds", orderLines);
-                            for (ObjId orderLineObjId : orderLines) {
-                                if (orderLineObjId != null && graph.getNode(orderLineObjId) != null && graph.getNode(orderLineObjId).getPartitionId() == this.partitionId)
-                                    existing.add(orderLineObjId);
-                                else
-                                    missing.add(orderLineObjId);
-
-                            }
-                        }
-                    }
-                    break;
-                }
-                case DELIVERY: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    ObjId warehouseObjId = null;
-                    if (secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)) != null && secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).size() > 0)
-                        warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-
-                    if (warehouseObjId != null && graph.getNode(warehouseObjId) != null && graph.getNode(warehouseObjId).getPartitionId() == this.partitionId)
-                        existing.add(warehouseObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Warehouse", terminalWarehouseID)));
-
-
-                    for (int districtID = 1; districtID <= TpccConfig.configDistPerWhse; districtID++) {
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        if (secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)) != null && secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).size() > 0)
-                            districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        if (districtObjId != null && graph.getNode(districtObjId) != null && graph.getNode(districtObjId).getPartitionId() == this.partitionId)
-                            existing.add(districtObjId);
-                        else
-                            missing.add(districtObjId);
-
-
-                        String newOrdersKey = Row.genSId("NewOrder", terminalWarehouseID, districtID);
-                        boolean found = false;
-                        if (secondaryIndex.get(newOrdersKey) != null) {
-                            found = true;
-                            ObjId newOrderObjId;
-                            newOrderObjId = secondaryIndex.get(newOrdersKey).iterator().next();
-
-                            if (newOrderObjId != null && graph.getNode(newOrderObjId) != null && graph.getNode(newOrderObjId).getPartitionId() == this.partitionId)
-                                existing.add(newOrderObjId);
-                            else
-                                missing.add(newOrderObjId);
-
-                            String orderIdKey = Row.genSId("Order", terminalWarehouseID, districtID, -1, newOrderObjId.getSId().split(":")[3].split("=")[1]);
-
-                            if (secondaryIndex.get(orderIdKey) == null) {
-                                System.out.println("ERROR: Can't find order " + orderIdKey);
+                            if (customerObjId == null) {
+                                logger.debug("cmd {} can't find customer {}", command.getId(), Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName));
                                 command.setInvalid(true);
-                                return;
+                                return srcPartMap;
                             }
-
-                            ObjId orderObjId = secondaryIndex.get(orderIdKey).iterator().next();
-                            if (orderObjId != null && graph.getNode(orderObjId) != null && graph.getNode(orderObjId).getPartitionId() == this.partitionId)
-                                existing.add(orderObjId);
-                            else
-                                missing.add(orderObjId);
-
-                            String customerKey = Row.genSId("Customer", terminalWarehouseID, districtID, Integer.parseInt(orderObjId.getSId().split(":")[3].split("=")[1]));
-                            ObjId customerObjId = secondaryIndex.get(customerKey).iterator().next();
-
-                            if (secondaryIndex.get(customerObjId) != null && secondaryIndex.get(customerObjId).size() > 0)
-                                customerObjId = secondaryIndex.get(customerObjId).iterator().next();
-                            if (customerObjId != null && graph.getNode(customerObjId) != null && graph.getNode(customerObjId).getPartitionId() == this.partitionId)
-                                existing.add(customerObjId);
-                            else
-                                missing.add(customerObjId);
-
-
-                            String orderLineKey = Row.genSId("OrderLine", terminalWarehouseID, districtID, orderObjId.getSId().split(":")[4].split("=")[1]);
-                            if (secondaryIndex.get(orderLineKey) != null) {
-                                Set<ObjId> orderLines = secondaryIndex.get(orderLineKey);
-                                for (ObjId orderLineObjId : orderLines) {
-                                    if (orderLineObjId != null && graph.getNode(orderLineObjId) != null && graph.getNode(orderLineObjId).getPartitionId() == this.partitionId)
-                                        existing.add(orderLineObjId);
-                                    else
-                                        missing.add(orderLineObjId);
-
-                                }
-                            }
+                            objId.setSId(customerObjId.getSId());
                         }
                     }
-
-                    break;
                 }
-                case STOCK_LEVEL: {
-                    int terminalWarehouseID = (int) params.get("w_id");
-                    int districtID = (int) params.get("d_id");
-                    ObjId warehouseObjId = null, districtObjId = null;
-                    if (secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)) != null && secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).size() > 0)
-                        warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-
-                    if (warehouseObjId != null && graph.getNode(warehouseObjId) != null && graph.getNode(warehouseObjId).getPartitionId() == this.partitionId)
-                        existing.add(warehouseObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("Warehouse", terminalWarehouseID)));
-
-                    if (secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)) != null && secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).size() > 0)
-                        districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                    if (districtObjId != null && graph.getNode(districtObjId) != null && graph.getNode(districtObjId).getPartitionId() == this.partitionId)
-                        existing.add(districtObjId);
-                    else
-                        missing.add(new ObjId(Row.genSId("District", terminalWarehouseID, districtID)));
-
-                    Set<ObjId> stockDistrictObjIds = TpccUtil.getStockDistrictId(terminalWarehouseID);
-                    stockDistrictObjIds.forEach(objId -> objId.includeDependencies = true);
-                    for (ObjId districtId : stockDistrictObjIds) {
-                        if (districtId != null && graph.getNode(districtId) != null && graph.getNode(districtId).getPartitionId() == this.partitionId)
-                            existing.add(districtId);
-                        else
-                            missing.add(districtId);
-                    }
-
-                    break;
-                }
-                default:
-                    break;
             }
-        } catch (Exception e) {
-            System.out.println("P_" + this.partitionId + " ERROR: " + e.getMessage() + " command " + command.toFullString());
-            e.printStackTrace();
         }
+        logger.debug("SrcMap after refining: " + srcPartMap);
+        return srcPartMap;
 
-        srcPartMap.clear();
-        if (destPartId == this.partitionId) {
-            logger.debug("[{}] - cmd {} is going to execute on THIS partition. Will calculate what to receive {}", this.partitionId, command.getId(), missing);
-            srcPartMap.put(-1, missing);
-        } else {
-            logger.debug("[{}] - cmd {} is going to execute on ANOTHER partition. Will calculate what to send {}", this.partitionId, command.getId(), existing);
-            srcPartMap.put(this.partitionId, existing);
-        }
-
-
-        return;
     }
 
 
@@ -459,7 +155,7 @@ public class TpccProcedure implements AppProcedure {
             return command.getInvolvedObjects();
         }
         Set<ObjId> ret = new HashSet<>();
-        if (this.role.equals("CLIENT") || this.role.equals("ORACLE")) {
+        if (this.role.equals("ORACLE")) {
             if (command.getItem(0) instanceof TpccCommandType) {
                 TpccCommandType cmdType = (TpccCommandType) command.getNext();
                 Map<String, Object> params = (Map<String, Object>) command.getItem(1);
@@ -491,29 +187,89 @@ public class TpccProcedure implements AppProcedure {
                         break;
                     }
                     case ORDER_STATUS: {
-                        int terminalWarehouseID = (int) params.get("w_id");
-                        int districtID = (int) params.get("d_id");
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
                         ret.add(districtObjId);
                         ret.add(warehouseObjId);
                         break;
                     }
                     case DELIVERY: {
                         int terminalWarehouseID = (int) params.get("w_id");
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
                         ret.add(warehouseObjId);
+                        Set<ObjId> districtObjIds = (HashSet) params.get("d_obj_ids");
+                        ret.addAll(districtObjIds);
                         break;
                     }
                     case STOCK_LEVEL: {
-                        int terminalWarehouseID = (int) params.get("w_id");
-                        int districtID = (int) params.get("d_id");
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
                         ret.add(districtObjId);
                         ret.add(warehouseObjId);
-                        Set<ObjId> stockDistrictObjIds = TpccUtil.getStockDistrictId(terminalWarehouseID);
+                        Set<ObjId> districtObjIds = (HashSet) params.get("s_d_obj_ids");
+                        ret.addAll(districtObjIds);
+                        break;
+                    }
+
+                }
+            }
+        } else if (this.role.equals("CLIENT")) {
+            if (command.getItem(0) instanceof TpccCommandType) {
+                TpccCommandType cmdType = (TpccCommandType) command.getNext();
+                Map<String, Object> params = (Map<String, Object>) command.getItem(1);
+                switch (cmdType) {
+                    case NEW_ORDER: {
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+                        ObjId customerObjId = (ObjId) params.get("c_obj_id");
+                        ret.add(districtObjId);
+                        ret.add(warehouseObjId);
+                        ret.add(customerObjId);
+                        Set<ObjId> supplierWarehouseObjIds = (Set<ObjId>) params.get("supplierWarehouseObjIds");
+                        Set<ObjId> stockDistrictObjIds = TpccUtil.getStockDistrictId((int) params.get("w_id"));
+                        Set<ObjId> stockIds = (HashSet) params.get("stockIds");
                         ret.addAll(stockDistrictObjIds);
+                        if (supplierWarehouseObjIds.size() > 0) ret.addAll(supplierWarehouseObjIds);
+                        ret.addAll(stockIds);
+                        break;
+                    }
+                    case PAYMENT: {
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+                        ObjId customerObjId = (ObjId) params.get("c_obj_id");
+                        if (customerObjId != null) ret.add(customerObjId);
+                        ret.add(districtObjId);
+                        ret.add(warehouseObjId);
+                        ObjId customerDistrictObjId = (ObjId) params.get("c_d_obj_id");
+                        ObjId customerWarehouseObjId = (ObjId) params.get("c_w_obj_id");
+                        ret.add(customerDistrictObjId);
+                        ret.add(customerWarehouseObjId);
+                        break;
+                    }
+                    case ORDER_STATUS: {
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+                        ObjId customerObjId = (ObjId) params.get("c_obj_id");
+                        if (customerObjId != null) ret.add(customerObjId);
+                        ret.add(districtObjId);
+                        ret.add(warehouseObjId);
+                        break;
+                    }
+                    case DELIVERY: {
+                        int terminalWarehouseID = (int) params.get("w_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+                        ret.add(warehouseObjId);
+                        Set<ObjId> districtObjIds = (HashSet) params.get("d_obj_ids");
+                        ret.addAll(districtObjIds);
+                        break;
+                    }
+                    case STOCK_LEVEL: {
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+                        ret.add(districtObjId);
+                        ret.add(warehouseObjId);
+                        Set<ObjId> districtObjIds = (HashSet) params.get("s_d_obj_ids");
+                        ret.addAll(districtObjIds);
                         break;
                     }
                     case READ: {
@@ -536,150 +292,108 @@ public class TpccProcedure implements AppProcedure {
                         break;
                     }
                     case NEW_ORDER: {
-                        int terminalWarehouseID = (int) params.get("w_id");
-                        int districtID = (int) params.get("d_id");
-                        int customerID = (int) params.get("c_id");
-                        int numItems = (int) params.get("ol_o_cnt");
-                        int allLocal = (int) params.get("o_all_local");
-                        int[] itemIDs = (int[]) params.get("itemIds");
-                        int[] supplierWarehouseIDs = (int[]) params.get("supplierWarehouseIDs");
+                        ObjId terminalWarehouseID = (ObjId) params.get("w_obj_id");
+                        ObjId districtID = (ObjId) params.get("d_obj_id");
+                        ObjId customerID = (ObjId) params.get("c_obj_id");
+                        Set<ObjId> itemObjIds = (HashSet) params.get("itemObjIds");
+                        Set<ObjId> supplierWarehouseObjIds = (HashSet) params.get("supplierWarehouseObjIds");
+                        Set<ObjId> stockObjIds = (Set<ObjId>) params.get("stockIds");
+                        stockObjIds.forEach(objId -> objId.includeDependencies = true);
                         int[] orderQuantities = (int[]) params.get("orderQuantities");
-//                        System.out.println("All local - "+allLocal+" - w_id="+terminalWarehouseID+" - d_id="+districtID+" - supplierWarehouseIDs="+supplierWarehouseIDs[0]);
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
 
-                        ObjId customerObjId = new ObjId(Row.genSId("Customer", terminalWarehouseID, districtID, customerID));
-                        //TODO testing
-//                        ObjId customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)).iterator().next();
-                        Set<ObjId> itemObjIds = new HashSet<>();
-                        for (int i = 0; i < numItems; i++) {
-                            if (!secondaryIndex.containsKey(Row.genSId("Item", itemIDs[i]))) {
-                                command.setInvalid(true);
-                                return ret;
-                            }
-                            itemObjIds.add(secondaryIndex.get(Row.genSId("Item", itemIDs[i])).iterator().next());
-                        }
-                        Set<ObjId> supplierWarehouseObjIds = new HashSet<>();
-                        for (int i = 0; i < numItems; i++) {
-                            //TODO testing
-                            supplierWarehouseObjIds.add(secondaryIndex.get(Row.genSId("Warehouse", supplierWarehouseIDs[i])).iterator().next());
-//                            supplierWarehouseObjIds.add(new ObjId(Row.genSId("Warehouse", supplierWarehouseIDs[i])));
-                        }
-
-                        Set<ObjId> stockObjIds = new HashSet<>();
-                        for (int i = 0; i < numItems; i++) {
-                            //TODO testing
-//                            stockObjIds.add(secondaryIndex.get(Row.genSId("Stock", supplierWarehouseIDs[i], itemIDs[i])).iterator().next());
-                            stockObjIds.add(new ObjId(Row.genSId("Stock", supplierWarehouseIDs[i], itemIDs[i])));
-                        }
-                        ret.add(warehouseObjId);
-                        ret.add(districtObjId);
-                        ret.add(customerObjId);
+                        ret.add(terminalWarehouseID);
+                        ret.add(districtID);
+                        ret.add(customerID);
                         ret.addAll(itemObjIds);
-                        ret.addAll(supplierWarehouseObjIds);
+//                        ret.addAll(supplierWarehouseObjIds);
                         ret.addAll(stockObjIds);
                         break;
                     }
                     case PAYMENT: {
-                        int terminalWarehouseID = (int) params.get("w_id");
-                        int districtID = (int) params.get("d_id");
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        ret.add(warehouseObjId);
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+
                         ret.add(districtObjId);
-
-                        int customerWarehouseID = (int) params.get("c_w_id");
-                        int customerDistrictID = (int) params.get("c_d_id");
-
-                        ObjId customerWarehouseObjId = new ObjId(Row.genSId("Warehouse", terminalWarehouseID));
-                        ObjId customerDistrictObjId = new ObjId(Row.genSId("District", terminalWarehouseID, districtID));
-//                        ObjId customerWarehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-//                        ObjId customerDistrictObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        ret.add(customerWarehouseObjId);
+                        ret.add(warehouseObjId);
+                        ObjId customerDistrictObjId = (ObjId) params.get("c_d_obj_id");
+                        ObjId customerWarehouseObjId = (ObjId) params.get("c_w_obj_id");
                         ret.add(customerDistrictObjId);
+                        ret.add(customerWarehouseObjId);
+
 
                         boolean customerByName = (boolean) params.get("c_by_name");
                         if (!customerByName) {
-                            int customerID = (int) params.get("c_id");
-
-//                            ObjId customerObjId = new ObjId(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID));
-//                            logger.info("P_{} looking for customer {}", this.partitionId, Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID));
-                            ObjId customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID)).iterator().next();
+                            ObjId customerObjId = (ObjId) params.get("c_obj_id");
                             ret.add(customerObjId);
                         } else {
-                            long seed = (long) params.get("randomSeed");
-                            Random r = new Random(seed);
-                            String customerLastName = TpccUtil.getLastName(r);
-//                            ObjId customerObjId = new ObjId(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerID));
+                            int customerWarehouseID = (int) params.get("c_w_id");
+                            int customerDistrictID = (int) params.get("c_d_id");
+
+                            String customerLastName = (String) params.get("c_name");
                             ObjId customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)) != null ?
                                     secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)).iterator().next() : null;
-                            while (customerObjId == null) {
-                                customerLastName = TpccUtil.getLastName(r);
-//                            System.out.println("looking for " + customerLastName);
-                                if (secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)) == null)
-                                    continue;
-                                customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)).iterator().next();
-//                            System.out.println("found " + customerLastName + " - " + customerObjId);
+                            if (customerObjId != null) {
+                                params.put("c_objId", customerObjId);
+                                ret.add(customerObjId);
                             }
-                            params.put("c_objId", customerObjId);
-                            ret.add(customerObjId);
+
                         }
                         break;
                     }
                     case ORDER_STATUS: {
+
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
+
+                        ret.add(districtObjId);
+                        ret.add(warehouseObjId);
+
                         int terminalWarehouseID = (int) params.get("w_id");
                         int districtID = (int) params.get("d_id");
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                        ret.add(warehouseObjId);
-                        ret.add(districtObjId);
+
                         boolean customerByName = (boolean) params.get("c_by_name");
+
                         ObjId customerObjId;
                         if (!customerByName) {
-                            int customerID = (int) params.get("c_id");
-                            customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerID)).iterator().next();
+                            customerObjId = (ObjId) params.get("c_obj_id");
                             ret.add(customerObjId);
                         } else {
-                            long seed = (long) params.get("randomSeed");
-                            Random r = new Random(seed);
-                            String customerLastName = TpccUtil.getLastName(r);
-                            customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)) != null ?
-                                    secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)).iterator().next() : null;
-                            while (customerObjId == null) {
-                                customerLastName = TpccUtil.getLastName(r);
-//                            System.out.println("looking for "+customerLastName);
-                                if (secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)) == null)
-                                    continue;
-                                customerObjId = secondaryIndex.get(Row.genSId("Customer", terminalWarehouseID, districtID, customerLastName)).iterator().next();
-//                            System.out.println("found "+customerLastName+" - "+customerObjId);
+                            int customerWarehouseID = (int) params.get("c_w_id");
+                            int customerDistrictID = (int) params.get("c_d_id");
+
+                            String customerLastName = (String) params.get("c_name");
+                            customerObjId = secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)) != null ?
+                                    secondaryIndex.get(Row.genSId("Customer", customerWarehouseID, customerDistrictID, customerLastName)).iterator().next() : null;
+                            if (customerObjId != null) {
+                                params.put("c_objId", customerObjId);
+                                ret.add(customerObjId);
                             }
-                            params.put("c_objId", customerObjId);
-                            ret.add(customerObjId);
+
                         }
 
-//                    System.out.println("customer id " + customerObjId.getSId());
-//                    System.out.println("extracted id: " + customerObjId.getSId().split(":")[3].split("=")[1]);
-                        String ordersKey = Row.genSId("Order", terminalWarehouseID, districtID, customerObjId.getSId().split(":")[3].split("=")[1]);
-//                    System.out.println("finding keys " + ordersKey);
+                        String ordersKey = Row.genSId("Order", terminalWarehouseID, districtID, Integer.parseInt(customerObjId.getSId().split(":")[3].split("=")[1]));
 
+//                        System.out.println("customerObjId: " + customerObjId + " - " + customerObjId.getSId() + " - - " + customerObjId.getSId().split(":")[3].split("=")[1]);
+//                        System.out.println("ordersKey: " + ordersKey);
                         if (secondaryIndex.get(ordersKey) != null) {
-//                            List<ObjId> orders = new ArrayList<>();
-//                            synchronized (secondaryIndex.get(ordersKey)) {
-//                                orders.addAll(secondaryIndex.get(ordersKey));
-//                            }
-////                            orders.addAll(secondaryIndex.get(ordersKey));
-//                            Collections.sort(orders, new OrderIdComparator());
+                            List<ObjId> orders = new ArrayList<>();
+                            synchronized (secondaryIndex.get(ordersKey)) {
+                                orders.addAll(secondaryIndex.get(ordersKey));
+                            }
+                            orders.addAll(secondaryIndex.get(ordersKey));
+                            Collections.sort(orders, new OrderIdComparator());
 //
-//                        System.out.println("found orders" + orders);
-                            ObjId orderObjId = new ObjId(ordersKey);
+//                            System.out.println("found orders" + orders);
+                            ObjId orderObjId = orders.get(0);
+//                            ObjId orderObjId = new ObjId(ordersKey);
 //                            ObjId orderObjId = secondaryIndex.get(ordersKey).iterator().next();
                             params.put("orderObjId", orderObjId);
                             ret.add(orderObjId);
                             String orderLineKey = Row.genSId("OrderLine", terminalWarehouseID, districtID, orderObjId.getSId().split(":")[4].split("=")[1]);
-//                        System.out.println("finding ol keys " + orderLineKey);
+//                            System.out.println("finding ol keys " + orderLineKey);
                             if (secondaryIndex.get(orderLineKey) != null) {
                                 Set<ObjId> orderLines = secondaryIndex.get(orderLineKey);
-//                            System.out.println("found orderLiness" + orderLines);
+//                                System.out.println("found orderLiness" + orderLines);
                                 params.put("orderLineObjIds", orderLines);
                                 ret.addAll(orderLines);
                             }
@@ -688,83 +402,24 @@ public class TpccProcedure implements AppProcedure {
                     }
                     case DELIVERY: {
                         int terminalWarehouseID = (int) params.get("w_id");
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
                         ret.add(warehouseObjId);
-                        for (int districtID = 1; districtID <= TpccConfig.configDistPerWhse; districtID++) {
-                            ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
-                            ret.add(districtObjId);
-
-                            String newOrdersKey = Row.genSId("NewOrder", terminalWarehouseID, districtID);
-//                            System.out.println("finding newOrdersKey keys " + newOrdersKey);
-                            boolean found = false;
-                            if (secondaryIndex.get(newOrdersKey) != null) {
-                                found = true;
-//                                List<ObjId> newOrders = new ArrayList<>();
-                                ObjId newOrderObjId;
-//                                synchronized (secondaryIndex.get(newOrdersKey)) {
-//                                    newOrders.addAll(secondaryIndex.get(newOrdersKey));
-                                newOrderObjId = secondaryIndex.get(newOrdersKey).iterator().next();
-//                                }
-//                                System.out.println("found newOrders sorted" + newOrderObjId);
-//                                Collections.sort(newOrders, new NewOrderIdComparator());
-//                            System.out.println("found newOrders" + newOrders);
-//                                newOrderObjId = newOrders.iterator().next();
-                                params.put("newOrderObjId_" + districtID, newOrderObjId);
-                                ret.add(newOrderObjId);
-
-
-                                String orderIdKey = Row.genSId("Order", terminalWarehouseID, districtID, -1, newOrderObjId.getSId().split(":")[3].split("=")[1]);
-//                            System.out.println("orderId key" + orderIdKey);
-
-                                if (secondaryIndex.get(orderIdKey) == null) {
-                                    System.out.println("ERROR: Can't find order " + orderIdKey);
-                                    command.setInvalid(true);
-                                    return ret;
-                                }
-                                ObjId orderObjId = secondaryIndex.get(orderIdKey).iterator().next();
-//                                System.out.println("found order id" + orderObjId);
-                                params.put("orderObjId_" + districtID, orderObjId);
-                                ret.add(orderObjId);
-
-                                String customerKey = Row.genSId("Customer", terminalWarehouseID, districtID, Integer.parseInt(orderObjId.getSId().split(":")[3].split("=")[1]));
-//                                System.out.println("customerKey " + customerKey);
-//                                if (!secondaryIndex.containsKey(customerKey))
-//                                    System.out.println("w_id=" + warehouseObjId + "d_id=" + districtID + "-" + orderObjId + "-can't find customerKey " + customerKey);
-                                ObjId customerObjId = secondaryIndex.get(customerKey).iterator().next();
-//                                System.out.println("found customer " + customerObjId);
-                                params.put("customerObjId_" + districtID, customerObjId);
-                                ret.add(customerObjId);
-
-                                String orderLineKey = Row.genSId("OrderLine", terminalWarehouseID, districtID, orderObjId.getSId().split(":")[4].split("=")[1]);
-//                                System.out.println("finding ol keys " + orderLineKey);
-                                if (secondaryIndex.get(orderLineKey) != null) {
-                                    Set<ObjId> orderLines = secondaryIndex.get(orderLineKey);
-//                                    System.out.println("found orderLiness" + orderLines);
-                                    params.put("orderLineObjIds_" + districtID, orderLines);
-                                    ret.addAll(orderLines);
-                                }
-                            }
-//                            if (!found)
-//                                System.out.println("Found no new order for w=" + terminalWarehouseID + ":d=" + districtID);
-                        }
+                        Set<ObjId> districtObjIds = (HashSet) params.get("d_obj_ids");
+                        ret.addAll(districtObjIds);
 
                         break;
                     }
                     case STOCK_LEVEL: {
                         int terminalWarehouseID = (int) params.get("w_id");
+                        ObjId warehouseObjId = (ObjId) params.get("w_obj_id");
                         int districtID = (int) params.get("d_id");
-                        ObjId warehouseObjId = secondaryIndex.get(Row.genSId("Warehouse", terminalWarehouseID)).iterator().next();
-                        ObjId districtObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, districtID)).iterator().next();
+                        ObjId districtObjId = (ObjId) params.get("d_obj_id");
                         districtObjId.includeDependencies = true;
                         ret.add(warehouseObjId);
                         ret.add(districtObjId);
                         Set<ObjId> stockDistrictObjIds = TpccUtil.getStockDistrictId(terminalWarehouseID);
                         stockDistrictObjIds.forEach(objId -> objId.includeDependencies = true);
                         ret.addAll(stockDistrictObjIds);
-//                        System.out.println("Getting those objs" + stockDistrictObjIds);
-//                        ObjId stockDistrictObjId = secondaryIndex.get(Row.genSId("District", terminalWarehouseID, TpccConfig.defautDistrictForStock)).iterator().next();
-//                        stockDistrictObjId.includeDependencies = true;
-//                        ret.add(stockDistrictObjId);
                         break;
                     }
                 }

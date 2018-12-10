@@ -15,6 +15,61 @@ public abstract class Row extends PRObject {
     private static ScriptEngine engine = mgr.getEngineByName("JavaScript");
     private String strObjId;
 
+    static int BASE_W_ID = 100000000;
+    static int BASE_D_ID = 1000000;
+
+    static int BASE_C_ID = 0;
+    static int BASE_NO_ID = 10000;
+    static int BASE_ITEM_ID = 100000;
+    static int BASE_STOCK_ID = 200000;
+    static int BASE_HIS_ID = 400000;
+    static int BASE_ORDER_ID = 500000;
+    static int BASE_ORDER_LINE_ID = 600000;
+
+
+    public static ObjId genObjId(String model, Object... attr) {
+        long value = -1;
+        switch (model) {
+            case "Warehouse": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID;
+                break;
+            }
+            case "District": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + Long.parseLong(attr[1].toString()) * BASE_D_ID;
+                break;
+            }
+            case "Customer": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + Long.parseLong(attr[1].toString()) * BASE_D_ID + BASE_C_ID + Long.parseLong(attr[2].toString());
+                break;
+            }
+            case "NewOrder": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + Long.parseLong(attr[1].toString()) * BASE_D_ID + BASE_NO_ID + Long.parseLong(attr[2].toString());
+                break;
+            }
+            case "Item": {
+                value = 1 * BASE_W_ID + 1 * BASE_D_ID + BASE_ITEM_ID + Long.parseLong(attr[0].toString());
+                break;
+            }
+            case "Stock": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + 1 * BASE_D_ID + BASE_STOCK_ID + Long.parseLong(attr[1].toString());
+                break;
+            }
+            case "History": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + Long.parseLong(attr[1].toString()) * BASE_D_ID + BASE_HIS_ID + Long.parseLong(attr[2].toString());
+                break;
+            }
+            case "Order": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + Long.parseLong(attr[1].toString()) * BASE_D_ID + BASE_ORDER_ID + Long.parseLong(attr[2].toString()) * 10 + Long.parseLong(attr[3].toString());
+                break;
+            }
+            case "OrderLine": {
+                value = Long.parseLong(attr[0].toString()) * BASE_W_ID + Long.parseLong(attr[1].toString()) * BASE_D_ID + BASE_ORDER_LINE_ID + Long.parseLong(attr[2].toString()) * 1000 + Long.parseLong(attr[3].toString());
+                break;
+            }
+        }
+        return new ObjId(value);
+    }
+
     public static String genSId(String model, Object... attr) {
         StringBuilder ret = new StringBuilder(model);
 
@@ -68,13 +123,15 @@ public abstract class Row extends PRObject {
                 ret.append(attr[0]);
                 ret.append(":o_d_id=");
                 ret.append(attr[1]);
-                if (attr.length > 3) {
+                if (attr.length >= 3) {
                     if ((int) attr[2] > 0) {
                         ret.append(":o_c_id=");
                         ret.append(attr[2]);
                     }
-                    ret.append(":o_id=");
-                    ret.append(attr[3]);
+                    if (attr.length > 3) {
+                        ret.append(":o_id=");
+                        ret.append(attr[3]);
+                    }
                 }
                 break;
             }

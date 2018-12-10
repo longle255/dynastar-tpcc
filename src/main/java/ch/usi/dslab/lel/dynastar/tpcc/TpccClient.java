@@ -62,6 +62,11 @@ public class TpccClient {
         this.terminalNum = terminalNum;
         this.transactionNum = transactionNum;
         this.warehouseCount = warehouseCount;
+        String[] fileNameParts = dataFile.replace(".data", "").replace(".oracle", "").split("_");
+        int customerNum = Integer.valueOf(fileNameParts[5]);
+        int itemNum = Integer.valueOf(fileNameParts[7]);
+        TpccConfig.configItemCount = itemNum;
+        TpccConfig.configCustPerDist= customerNum;
         if (terminalNum == 0) {
             terminals = new TpccTerminal[1];
             terminals[0] = new TpccTerminal(clientProxy, "Interactive", 100, warehouseCount, 1, 1, 100, 45, 43, 4, 4, 4, -1, this, new BenchContext.CallbackHandler(this.clientProxy.getId()));
@@ -108,47 +113,6 @@ public class TpccClient {
 
     }
 
-//    private void preLoadData(String file) {
-//
-//        String redisHost = "192.168.3.90";
-//        boolean cacheLoaded = false;
-//        String[] fileNameParts = file.split("/");
-//        String fileName = fileNameParts[fileNameParts.length - 1];
-//        Integer partitionCount = Partition.getPartitionsCount();
-//        System.out.println("[CLIENT-" + this.clientProxy.getId() + "] Creating connection to redis host " + redisHost);
-//        Jedis jedis = new Jedis(redisHost);
-//        Codec codec = new CodecUncompressedKryo();
-//        long start = System.currentTimeMillis();
-//        String keyObjectGraph = fileName + "_p_" + partitionCount + "_CLIENT_" + this.clientProxy.getId() + "_objectGraph";
-//        String keySecondaryIndex = fileName + "_p_" + partitionCount + "_CLIENT_" + this.clientProxy.getId() + "_secondaryIndex";
-//        String keyDataLoaded = fileName + "_p_" + partitionCount + "_CLIENT_" + this.clientProxy.getId() + "_data_loaded";
-//
-//        try {
-//            String cached = jedis.get(keyDataLoaded);
-//            if (cached != null && cached.equals("OK")) {
-//                System.out.println("[CLIENT-" + this.clientProxy.getId() + "] loading sample data from cache...");
-//                this.clientProxy.setCache((PRObjectGraph) codec.createObjectFromString(jedis.get(keyObjectGraph)));
-//                this.clientProxy.setSecondaryIndex((HashMap<String, Set<ObjId>>) codec.createObjectFromString(jedis.get(keySecondaryIndex)));
-//                cacheLoaded = true;
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            System.exit(-1);
-//        }
-//        if (!cacheLoaded) {
-//            System.out.println("[CLIENT-" + this.clientProxy.getId() + "] loading sample data from file...");
-//            TpccUtil.loadDataToCache(file, this.clientProxy.getCache(), this.clientProxy.getSecondaryIndex(), (objId, obj) -> {
-//                int dest = TpccUtil.mapIdToPartition(objId);
-//                PRObjectNode node = new PRObjectNode(objId, dest);
-//                this.clientProxy.getCache().addNode(node);
-//            });
-//            jedis.set(keyObjectGraph, codec.getString(this.clientProxy.getCache()));
-//            jedis.set(keySecondaryIndex, codec.getString(this.clientProxy.getSecondaryIndex()));
-//            jedis.set(keyDataLoaded, "OK");
-//        }
-//        System.out.println("[CLIENT-" + this.clientProxy.getId() + "] Data loaded, takes " + (System.currentTimeMillis() - start));
-//    }
-
     private void preLoadData(String file) {
         String hostName = null, redisHost;
         try {
@@ -157,7 +121,7 @@ public class TpccClient {
             e.printStackTrace();
         }
         if (hostName.indexOf("node") == 0) {
-            redisHost = "192.168.3.91";
+            redisHost = "192.168.3.45";
         } else {
             redisHost = "127.0.0.1";
         }

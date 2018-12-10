@@ -1,0 +1,78 @@
+{
+  "paxos_groups": [
+    {
+      "group_members": [
+        {
+          "host": "127.0.0.1",
+          "pid": 0,
+          "port": 51000,
+          "inc": 0
+        },
+        {
+          "host": "127.0.0.1",
+          "pid": 1,
+          "port": 51001,
+          "inc": 1
+        },
+        {
+          "host": "127.0.0.1",
+          "pid": 2,
+          "port": 51002,
+          "inc": 2
+        }
+      ],
+      "group_id": 0
+    },
+    {
+      "group_members": [
+        {
+          "host": "127.0.0.1",
+          "pid": 0,
+          "port": 51003,
+          "inc": 3
+        },
+        {
+          "host": "127.0.0.1",
+          "pid": 1,
+          "port": 51004,
+          "inc": 4
+        },
+        {
+          "host": "127.0.0.1",
+          "pid": 2,
+          "port": 51005,
+          "inc": 5
+        }
+      ],
+      "group_id": 1
+    }
+  ],
+  "jmcast_config_file": "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/systemConfigs/jmcast_mcast_1p.conf",
+  "group_members": [
+    {
+      "group": 0,
+      "rmcast_port": 56000,
+      "pid": 0,
+      "host": "127.0.0.1",
+      "gpid": 0,
+      "rmcast_address": "127.0.0.1",
+      "port": 50000
+    },
+    {
+      "group": 1,
+      "rmcast_port": 56001,
+      "pid": 1,
+      "host": "127.0.0.1",
+      "gpid": 0,
+      "rmcast_address": "127.0.0.1",
+      "port": 50001
+    }
+  ],
+  "batch_size_threshold_bytes": 50000,
+  "batch_time_threshold_ms": 5,
+  "batching_enabled": true,
+  "rmcast_agent_class": "SimpleReliableMulticastAgent",
+  "agent_class": "JMcastAgent",
+  "delta_null_messages_ms": 5,
+  "paxos_config_file": "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/systemConfigs/jmcast_paxos_1p.conf"
+}

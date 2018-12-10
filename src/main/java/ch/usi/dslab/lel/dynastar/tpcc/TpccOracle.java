@@ -25,7 +25,7 @@ public class TpccOracle extends OracleStateMachine {
     public static final Logger log = LoggerFactory.getLogger(TpccOracle.class);
 
     private int repartitioningThreshold = 3;
-    private long repartitioningInterval = 60000;
+    private long repartitioningInterval = 90000;
 
 
     // need 24s for loading data for 2, 15s for cache
@@ -42,7 +42,7 @@ public class TpccOracle extends OracleStateMachine {
         this.setRepartitioningThreshold(0); // no dynamic
         this.setRepartitioningInterval(repartitioningInterval);
         this.setRepartitioningLimit(1);
-
+        this.setHyperGraph(false);
 
         this.setRepeatingPartitioning(false);
     }
@@ -79,69 +79,8 @@ public class TpccOracle extends OracleStateMachine {
 
     @Override
     protected void preprocessCommand(Command command) {
-//        command.rewind();
-//        MessageType cmdType = (MessageType) command.getNext();
-//        if (!(cmdType instanceof TpccCommandType)) return;
-//        switch ((TpccCommandType) cmdType) {
-//            case NEW_ORDER: {
-//                Map<String, Object> params = (HashMap) command.getNext();
-//                int w_id = (int) params.get("w_id");
-//                int d_id = (int) params.get("d_id");
-//                log.debug("NEW_ORDER: w_id={} d_id={}", w_id, d_id);
-//                ObjId districtObjId = secondaryIndex.get(Row.genSId("District", w_id, d_id)).iterator().next();
-//                command.setInvolvedObjects();
-//                break;
-//            }
-//        }
-    }
 
-//    public void preLoadData(String file, String redisHost) {
-//        redisHost = "192.168.3.90";
-//        boolean cacheLoaded = false;
-//        long start = System.currentTimeMillis();
-//        String[] fileNameParts = file.split("/");
-//        String fileName = fileNameParts[fileNameParts.length - 1];
-//        Integer partitionCount = Partition.getPartitionsCount();
-//        System.out.println("Creating connection to redis host " + redisHost);
-//        Jedis jedis = new Jedis(redisHost);
-//        Codec codec = new CodecUncompressedKryo();
-//        String keyObjectGraph = fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_objectGraph";
-//        String keySecondaryIndex = fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_secondaryIndex";
-//        String keyDataLoaded = fileName + "_p_" + partitionCount + "_ORACLE_" + this.partitionId + "_data_loaded";
-//        try {
-//            String cached = jedis.get(keyDataLoaded);
-//            if (cached != null && cached.equals("OK")) {
-//                System.out.println("[ORACLE" + this.partitionId + "] loading sample data from cache..." + System.currentTimeMillis());
-//                this.objectGraph = (PRObjectGraph) codec.createObjectFromString(jedis.get(keyObjectGraph));
-//                this.secondaryIndex = (ConcurrentHashMap<String, Set<ObjId>>) codec.createObjectFromString(jedis.get(keySecondaryIndex));
-//                this.objectGraph.setLogger(this.logger);
-//                cacheLoaded = true;
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            System.exit(-1);
-//        }
-//
-//        if (!cacheLoaded) {
-//            System.out.println("[ORACLE" + this.partitionId + "] loading sample data from file..." + System.currentTimeMillis());
-//            TpccUtil.loadDataToCache(file, this.objectGraph, this.secondaryIndex, (objId, obj) -> {
-//                int dest = TpccUtil.mapIdToPartition(objId);
-//                String modelName = (String) obj.get("model");
-//                if (!modelName.equals("District") && !modelName.equals("Warehouse")) {
-//                    //do nothing
-//                } else {
-//                    PRObjectNode node = new PRObjectNode(objId, dest);
-//                    this.objectGraph.addNode(node);
-//                }
-//            });
-//            jedis.set(keyObjectGraph, codec.getString(this.objectGraph));
-//            jedis.set(keySecondaryIndex, codec.getString(this.secondaryIndex));
-//            jedis.set(keyDataLoaded, "OK");
-//        }
-//
-//        System.out.println("[ORACLE" + this.partitionId + "] Data loaded, takes " + (System.currentTimeMillis() - start));
-//
-//    }
+    }
 
     public void preLoadData(String file, String redisHost) {
         String hostName = null;
@@ -151,7 +90,7 @@ public class TpccOracle extends OracleStateMachine {
             e.printStackTrace();
         }
         if (hostName.indexOf("node") == 0) {
-            redisHost = "192.168.3.91";
+            redisHost = "192.168.3.45";
         } else {
             redisHost = "127.0.0.1";
         }
