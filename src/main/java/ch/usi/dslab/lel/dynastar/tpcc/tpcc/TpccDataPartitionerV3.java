@@ -72,15 +72,8 @@ public class TpccDataPartitionerV3 {
         System.out.print("Number of item:");
         input = scan.nextLine();
         int itemCount = Integer.parseInt(input);
-        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + warehouseCount + "_d_" + districtCount + "_c_" + customerCount + "_i_" + itemCount + ".data";
-
-//        int numPartition = Integer.parseInt(args[index++]);
-//        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-//        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + numPartition + "_d_10_c_20_i_100.data";
-
-
-//        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_3000_i_100000.data";
-//        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/w_" + numPartition + "_d_10_c_20_i_100.data";
+//        String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + warehouseCount + "_d_" + districtCount + "_c_" + customerCount + "_i_" + itemCount + ".data";
+        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + warehouseCount + "_d_" + districtCount + "_c_" + customerCount + "_i_" + itemCount + ".data";
         TpccDataPartitionerV3 app = new TpccDataPartitionerV3(file, warehouseCount);
         app.split();
     }

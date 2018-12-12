@@ -36,7 +36,7 @@ public class TpccServer extends PartitionStateMachine {
 //        this.setFeedbackInterval(50);
         this.setFeedbackInterval_ms(10000);
         this.setRecurringFeedback(false); // change to false in normal test
-        this.setHyperGraph(false);
+        this.setHyperGraph(true);
     }
 
     public static void main(String[] args) {

@@ -50,11 +50,11 @@ public class TpccDataGeneratorV3 {
         System.out.print("Number of item:");
         input = scan.nextLine();
         int itemCount = Integer.parseInt(input);
-        String filePath = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/";
+//        String filePath = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/";
+        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databasesV3/";
 
         TpccConfig.configCustPerDist = customerCount;
         TpccConfig.configItemCount = itemCount;
-//        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/";
         TpccDataGeneratorV3 generator = new TpccDataGeneratorV3(filePath, warehouseCount, districtCount, customerCount, itemCount);
         generator.generateCSVData();
     }
@@ -147,11 +147,11 @@ public class TpccDataGeneratorV3 {
         lines.add("customerCount," + customerCount);
         lines.add("itemCount," + itemCount);
         List<Warehouse> warehouses = genWarehouses();
-        List<Item> items = genItems();
-        List<Stock> stocks = genStocks();
         List<District> districts = genDistricts();
         Map<String, List> cust_hists = genCustomersAndOrderHistory();
         List<Customer> customers = cust_hists.get("customers");
+        List<Stock> stocks = genStocks();
+        List<Item> items = genItems();
         List<History> orderHistories = cust_hists.get("orderHistories");
         Map<String, List> orderList = genOrders();
         List<Order> orders = orderList.get("orders");
@@ -227,15 +227,6 @@ public class TpccDataGeneratorV3 {
             e.printStackTrace();
         }
 
-//        try {
-//            String fileName = "w_" + this.warehouseCount + "_d_" + this.districtCount + "_i_" + this.itemCount + "_c_" + this.customerCount + ".json";
-//            FileWriter file = new FileWriter(filePath + fileName);
-//            file.write(config.toJSONString());
-//            file.flush();
-//            file.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     private List<Warehouse> genWarehouses() {
@@ -244,7 +235,8 @@ public class TpccDataGeneratorV3 {
 
 //            ObjId oid1 = Row.genObjId(Row.MODEL.WAREHOUSE, new String[]{"w_id", String.valueOf(w)});
             Warehouse warehouse = new Warehouse(w);
-            warehouse.setId(Row.genObjId("Warehouse", w));
+//            warehouse.setId(Row.genObjId("Warehouse", w));
+            warehouse.setId(new ObjId(objIdCount.getAndIncrement()));
             warehouse.w_ytd = 300000;
 
             // random within [0.0000 .. 0.2000]
@@ -276,7 +268,8 @@ public class TpccDataGeneratorV3 {
         for (int i = 1; i <= itemCount; i++) {
 //            ObjId oid1 = Row.genObjId(Row.MODEL.ITEM, new String[]{"i_id", String.valueOf(i)});
             Item item = new Item(i);
-            item.setId(Row.genObjId("Item", i));
+//            item.setId(Row.genObjId("Item", i));
+            item.setId(new ObjId(objIdCount.getAndIncrement()));
             item.i_name = TpccUtil.randomStr(TpccUtil.randomNumber(14, 24, gen));
             item.i_price = (float) (TpccUtil.randomNumber(100, 10000, gen) / 100.0);
 
@@ -315,7 +308,8 @@ public class TpccDataGeneratorV3 {
                 //TODO: handle 2 primary keys
 //                ObjId oid1 = Row.genObjId(Row.MODEL.STOCK, new String[]{"s_w_id", String.valueOf(w), "s_i_id", String.valueOf(i)});
                 Stock stock = new Stock(w, i);
-                stock.setId(Row.genObjId("Stock", w, i));
+//                stock.setId(Row.genObjId("Stock", w, i));
+                stock.setId(new ObjId(objIdCount.getAndIncrement()));
                 stock.s_i_id = i;
                 stock.s_w_id = w;
                 stock.s_quantity = TpccUtil.randomNumber(10, 100, gen);
@@ -365,7 +359,9 @@ public class TpccDataGeneratorV3 {
             for (int d = 1; d <= districtCount; d++) {
 //                ObjId oid1 = Row.genObjId(Row.MODEL.DISTRICT, new String[]{"d_id", String.valueOf(d), "d_w_id", String.valueOf(w)});
                 District district = new District(d, w);
-                district.setId(Row.genObjId("District", w, d));
+//                district.setId(Row.genObjId("District", w, d));
+                district.setId(new ObjId(objIdCount.getAndIncrement()));
+//                System.out.println("Generating " + district.getId());
                 district.d_id = d;
                 district.d_w_id = w;
                 district.d_ytd = 30000;
@@ -404,7 +400,8 @@ public class TpccDataGeneratorV3 {
                     long sysdate = System.currentTimeMillis();
                     String c_last = TpccUtil.getLastName(gen);
                     Customer customer = new Customer(c, d, w, c_last);
-                    customer.setId(Row.genObjId("Customer", w, d, c));
+//                    customer.setId(Row.genObjId("Customer", w, d, c));
+                    customer.setId(new ObjId(objIdCount.getAndIncrement()));
 //                    ObjId oidCust = Row.genObjId(Row.MODEL.CUSTOMER, new String[]{"c_id", String.valueOf(c), "c_d_id", String.valueOf(d), "c_w_id", String.valueOf(w), "c_last", String.valueOf(c_last)});
 
                     // discount is random between [0.0000 ... 0.5000]
@@ -439,7 +436,8 @@ public class TpccDataGeneratorV3 {
 
 //                    ObjId oidHist = Row.genObjId(Row.MODEL.HISTORY, new String[]{"h_c_id", String.valueOf(c), "h_c_d_id", String.valueOf(d), "h_c_w_id", String.valueOf(w)});
                     History history = new History(c, d, w);
-                    history.setId(Row.genObjId("History", w, d, c));
+//                    history.setId(Row.genObjId("History", w, d, c));
+                    history.setId(new ObjId(objIdCount.getAndIncrement()));
                     history.h_d_id = d;
                     history.h_w_id = w;
                     history.h_date = sysdate;
@@ -506,7 +504,8 @@ public class TpccDataGeneratorV3 {
                 for (int c = 1; c <= customerCount; c++) {
                     int o_c_id = TpccUtil.randomNumber(1, customerCount, gen);
                     final Order oorder = new Order(w, d, o_c_id, c);
-                    oorder.setId(Row.genObjId("Order", w, d, o_c_id, c));
+//                    oorder.setId(Row.genObjId("Order", w, d, o_c_id, c));
+                    oorder.setId(new ObjId(objIdCount.getAndIncrement()));
                     oorder.o_c_id = o_c_id;
                     oorder.o_carrier_id = TpccUtil.randomNumber(1, 10, gen);
                     oorder.o_ol_cnt = TpccUtil.randomNumber(5, 15, gen);
@@ -520,7 +519,8 @@ public class TpccDataGeneratorV3 {
                     // NO_O_ID between 2,101 and 3,000) (70%)
                     if (oorder.o_id > customerCount * 0.7) {
                         NewOrder new_order = new NewOrder(oorder.o_w_id, oorder.o_d_id, oorder.o_id);
-                        new_order.setId(Row.genObjId("NewOrder", oorder.o_w_id, oorder.o_d_id, oorder.o_id));
+//                        new_order.setId(Row.genObjId("NewOrder", oorder.o_w_id, oorder.o_d_id, oorder.o_id));
+                        new_order.setId(new ObjId(objIdCount.getAndIncrement()));
                         newOrders.add(new_order);
                     }
 
@@ -533,7 +533,8 @@ public class TpccDataGeneratorV3 {
                         for (Order order : orderList) {
                             for (int l = 1; l <= order.o_ol_cnt; l++) {
                                 OrderLine order_line = new OrderLine(order.o_w_id, order.o_d_id, order.o_id, l);
-                                order_line.setId(Row.genObjId("OrderLine", order.o_w_id, order.o_d_id, order.o_id, l));
+//                                order_line.setId(Row.genObjId("OrderLine", order.o_w_id, order.o_d_id, order.o_id, l));
+                                order_line.setId(new ObjId(objIdCount.getAndIncrement()));
                                 order_line.ol_i_id = TpccUtil.randomNumber(1, itemCount, gen);
                                 order_line.ol_delivery_d = order.o_entry_d;
 

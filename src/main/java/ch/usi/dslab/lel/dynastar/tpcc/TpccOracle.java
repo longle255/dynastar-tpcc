@@ -25,7 +25,7 @@ public class TpccOracle extends OracleStateMachine {
     public static final Logger log = LoggerFactory.getLogger(TpccOracle.class);
 
     private int repartitioningThreshold = 3;
-    private long repartitioningInterval = 90000;
+    private long repartitioningInterval = 120000;
 
 
     // need 24s for loading data for 2, 15s for cache
@@ -42,7 +42,7 @@ public class TpccOracle extends OracleStateMachine {
         this.setRepartitioningThreshold(0); // no dynamic
         this.setRepartitioningInterval(repartitioningInterval);
         this.setRepartitioningLimit(1);
-        this.setHyperGraph(false);
+        this.setHyperGraph(true);
 
         this.setRepeatingPartitioning(false);
     }

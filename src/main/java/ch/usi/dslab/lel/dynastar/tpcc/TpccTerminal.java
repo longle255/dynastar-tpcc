@@ -29,6 +29,7 @@ public class TpccTerminal implements Runnable {
 
     private Semaphore sendPermits;
     private BenchContext.CallbackHandler callbackHandler;
+    private boolean goodToGo = false;
 
     public TpccTerminal(Client clientProxy, String terminalName, int terminalId, int warehouseCount, int warehouseId, int districtId, int numTransactions, int newOrderWeight, int paymentWeight, int deliveryWeight,
                         int orderStatusWeight, int stockLevelWeight, int limPerMin_Terminal, TpccClient parent, BenchContext.CallbackHandler callbackHandler) {
@@ -275,33 +276,37 @@ public class TpccTerminal implements Runnable {
             String transactionTypeName;
 
             long transactionStart = System.currentTimeMillis();
-            if (transactionType <= paymentWeight) {
-                transactionTypeName = "Payment";
-                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.PAYMENT);
-                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
-                doPayment(tmpAccept);
-            } else if (transactionType <= paymentWeight + stockLevelWeight) {
-                transactionTypeName = "Stock-Level";
-                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.STOCK_LEVEL);
-                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
-                doStockLevel(tmpAccept);
-            } else if (transactionType <= paymentWeight + stockLevelWeight + orderStatusWeight) {
-                transactionTypeName = "Order-Status";
-                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.ORDER_STATUS);
-                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
-                doOrderStatus(tmpAccept);
-            } else if (transactionType <= paymentWeight + stockLevelWeight + orderStatusWeight + deliveryWeight) {
-                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.DELIVERY);
-                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
-                transactionTypeName = "Delivery";
-                doDelivery(tmpAccept);
-            } else {
+            if (transactionType <= newOrderWeight) {
+//                System.out.println("Doing new order");
                 transactionTypeName = "New-Order";
                 BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.NEW_ORDER);
                 Consumer tmpAccept = o -> callbackHandler.accept(o, context);
                 doNewOrder(tmpAccept);
                 newOrderCounter++;
                 newOrder = 1;
+            } else if (transactionType <= newOrderWeight + stockLevelWeight && goodToGo) {
+                transactionTypeName = "Stock-Level";
+//                System.out.println("Doing "+transactionTypeName);
+                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.STOCK_LEVEL);
+                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
+                doStockLevel(tmpAccept);
+            } else if (transactionType <= newOrderWeight + stockLevelWeight + orderStatusWeight  && goodToGo) {
+                transactionTypeName = "Order-Status";
+//                System.out.println("Doing "+transactionTypeName);
+                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.ORDER_STATUS);
+                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
+                doOrderStatus(tmpAccept);
+            } else if (transactionType <= newOrderWeight + stockLevelWeight + orderStatusWeight + deliveryWeight && goodToGo) {
+                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.DELIVERY);
+                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
+                transactionTypeName = "Delivery";
+//                System.out.println("Doing "+transactionTypeName);
+                doDelivery(tmpAccept);
+            } else {
+                transactionTypeName = "Payment";
+                BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.PAYMENT);
+                Consumer tmpAccept = o -> callbackHandler.accept(o, context);
+                doPayment(tmpAccept);
             }
 
             long transactionEnd = System.currentTimeMillis();
@@ -332,5 +337,9 @@ public class TpccTerminal implements Runnable {
 
     public void releasePermit() {
         sendPermits.release();
+    }
+
+    public void onCacheInvalidated() {
+        this.goodToGo = true;
     }
 }

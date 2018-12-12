@@ -146,6 +146,15 @@ public class TpccProcedure implements AppProcedure {
 
     }
 
+//    public void fillDependencies(PRObjectNode node, PRObjectGraph objectGraph, Command command) {
+//        if (node.getDependencyIds() == null) return;
+//        Set<PRObjectNode> dependencies = new HashSet<>();
+//        node.getDependencyIds().stream().filter(objId -> {
+//            return objId.sId != null && (objId.sId.split(":")[0].equals("Stock") || objId.sId.split(":")[0].equals("OrderLine") || objId.sId.split(":")[0].equals("Order") || objId.sId.split(":")[0].equals("Customer")) && objectGraph.getNode(objId) != null;
+//        }).forEach(objId1 -> dependencies.add(objectGraph.getNode(objId1)));
+//        node.setDependencies(dependencies);
+//    }
+
 
     @Override
     public Set<ObjId> extractObjectId(Command command) {

@@ -29,7 +29,7 @@ def noderange(first, last):
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-EXPERIMENT_DURATION = 360  # 300 for 2,4, 360 for 8
+EXPERIMENT_DURATION =240  # 300 for 2,4, 360 for 8
 EXPERIMENT_WARMUP_MS = 50000  # ms //70 for 2,4 100 for 8 16
 EXPERIMENT_WARMUP_MS = 100  # ms
 
@@ -46,8 +46,8 @@ if not ENV_EC2 and not ENV_CLUSTER: ENV_LOCALHOST = True
 LOCALHOST_NODES = []
 for i in range(1, 50): LOCALHOST_NODES.append("127.0.0.1")
 
-DEAD_NODES = [41, 68]
-NODES_RANGE_FIRST = 65
+DEAD_NODES = [41,45, 68, 83]
+NODES_RANGE_FIRST = 11
 NODES_RANGE_LAST = 88
 PROFILING_PATH = "/home/long/softwares/yjp-2017.02/bin/linux-x86-64/libyjpagent.so"
 
@@ -63,7 +63,7 @@ if PROFILING: EXPERIMENT_DURATION = 600
 replicasPerPartition = 1
 ensembleSize = 3
 ridgeProcessPerNode = 2
-serverPerNode = 1
+serverPerNode = 2
 numOracle = 1
 
 MCAST_LIB = 'ridge'
@@ -335,7 +335,7 @@ javaCPUMonitorClass = "ch.usi.dslab.bezerra.sense.monitors.CPUEmbededMonitorJava
 javaCPUMonitorClass = "ch.usi.dslab.bezerra.sense.monitors.CPUMonitorMPStat"
 javaMemoryMonitorClass = "ch.usi.dslab.bezerra.sense.monitors.MemoryMonitor"
 
-TPCC_LOG_BASE = HOME + "/log/wrapup/"
+TPCC_LOG_BASE = HOME + "/log/final/"
 TPCC_LOG_CLIENTS = HOME + "/log/clients"
 TPCC_LOG_SERVERS = HOME + "/log/server"
 

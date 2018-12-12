@@ -74,7 +74,9 @@ public class TpccClient {
             this.runInteractive();
         } else {
 
-            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, "w=1:d=1_w=2:d=1_w=1:d=2_w=2:d=2_w=1:d=3_w=2:d=3_w=1:d=4_w=2:d=4_w=1:d=5_w=2:d=5");
+            // for testing
+//            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, "w=1:d=1_w=2:d=1_w=1:d=2_w=2:d=2_w=1:d=3_w=2:d=3_w=1:d=4_w=2:d=4_w=1:d=5_w=2:d=5");
+            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, terminalDistribution);
         }
     }
 
@@ -273,6 +275,12 @@ public class TpccClient {
         }
 //        sessionEndTargetTime = executionTimeMillis;
         signalTerminalsRequestEndSent = false;
+
+        clientProxy.setInvalidCacheCallback(() -> {
+            for (int i = 0; i < terminals.length; i++) {
+                terminals[i].onCacheInvalidated();
+            }
+        });
 
         synchronized (terminals) {
             logger.debug("Starting all terminals... Terminal count: " + terminals.length);
