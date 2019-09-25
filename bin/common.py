@@ -29,7 +29,7 @@ def noderange(first, last):
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-EXPERIMENT_DURATION =240  # 300 for 2,4, 360 for 8
+EXPERIMENT_DURATION =60  # 300 for 2,4, 360 for 8
 EXPERIMENT_WARMUP_MS = 50000  # ms //70 for 2,4 100 for 8 16
 EXPERIMENT_WARMUP_MS = 100  # ms
 
@@ -47,7 +47,7 @@ LOCALHOST_NODES = []
 for i in range(1, 50): LOCALHOST_NODES.append("127.0.0.1")
 
 DEAD_NODES = [41,45, 68, 83]
-NODES_RANGE_FIRST = 11
+NODES_RANGE_FIRST = 1
 NODES_RANGE_LAST = 88
 PROFILING_PATH = "/home/long/softwares/yjp-2017.02/bin/linux-x86-64/libyjpagent.so"
 
@@ -63,8 +63,9 @@ if PROFILING: EXPERIMENT_DURATION = 600
 replicasPerPartition = 1
 ensembleSize = 3
 ridgeProcessPerNode = 2
-serverPerNode = 2
+serverPerNode = 1
 numOracle = 1
+paxosProcessPerNode = 5
 
 MCAST_LIB = 'ridge'
 MCAST_LIB = 'jmcast'
@@ -250,9 +251,9 @@ BIN_HOME = os.path.normpath(GLOBAL_HOME + '/dynastarTPCC/bin')
 
 DYNASTAR_HOME = os.path.normpath(GLOBAL_HOME + '/dynastarV2')
 DYNASTAR_CP = os.path.normpath(DYNASTAR_HOME + '/target/classes')
-DYNASTAR_CLASS_SERVER = 'ch.usi.dslab.lel.dynastarv2.sample.AppServer'
-DYNASTAR_CLASS_ORACLE = 'ch.usi.dslab.lel.dynastarv2.sample.AppOracle'
-DYNASTAR_CLASS_CLIENT = 'ch.usi.dslab.lel.dynastarv2.sample.AppClient'
+DYNASTAR_CLASS_SERVER = 'AppServer'
+DYNASTAR_CLASS_ORACLE = 'AppOracle'
+DYNASTAR_CLASS_CLIENT = 'AppClient'
 
 LIBMCAD_HOME = os.path.normpath(GLOBAL_HOME + '/libmcad')
 LIBMCAD_CP = os.path.normpath(LIBMCAD_HOME + '/target/classes')
@@ -304,7 +305,7 @@ batching_enabled = True
 batching_enabled = False
 
 # JMCast CONFIG
-paxosProcessPerNode = 5
+
 jmcastSysConfigFile = SYSTEM_CONFIG_DIR + "/generatedSysConfig.json"
 jmcastMcastTemplate = SYSTEM_CONFIG_DIR + "/mcast.conf.tpl"
 jmcastPaxosTemplate = SYSTEM_CONFIG_DIR + "/paxos.conf.tpl"
@@ -395,7 +396,7 @@ def getJavaExec(node, role):
         if ENV_CLUSTER:
             return java + " -XX:+UseG1GC -Xmx6g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
         if ENV_EC2:
-            return java + " -XX:+UseG1GC -Xmx3g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
+            return java + " -XX:+UseG1GC -Xmx7g -Dlog4j.configuration=file:" + HOME + "/bin/" + log
     if role == 'SERVER':
         if ENV_CLUSTER:
             return java + " -server -Xloggc:/home/" + USERNAME + "/gc." + node + ".log -XX:+PrintGCTimeStamps -XX:+PrintGC -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=15 -XX:+UseParNewGC -Xms3g -Xmx3g -Dlog4j.configuration=file:" + HOME + "/bin/" + log

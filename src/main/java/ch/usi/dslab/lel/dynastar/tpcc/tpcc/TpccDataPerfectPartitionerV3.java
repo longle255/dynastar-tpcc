@@ -1,7 +1,6 @@
 package ch.usi.dslab.lel.dynastar.tpcc.tpcc;
 
 import ch.usi.dslab.lel.dynastar.tpcc.tables.Row;
-import ch.usi.dslab.lel.dynastarv2.Partition;
 import ch.usi.dslab.lel.dynastarv2.probject.ObjId;
 
 import java.io.IOException;
@@ -18,12 +17,12 @@ import static ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil.mapStockToDistrict;
 /**
  * Author: longle, created on 08/04/16.
  */
-public class TpccDataPartitionerV3 {
+public class TpccDataPerfectPartitionerV3 {
 
     String file;
     int numPartition;
 
-    public TpccDataPartitionerV3(String file, int numPartition) {
+    public TpccDataPerfectPartitionerV3(String file, int numPartition) {
         this.file = file;
         this.numPartition = numPartition;
     }
@@ -85,7 +84,7 @@ public class TpccDataPartitionerV3 {
 
         String file = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + warehouseCount + "_d_" + districtCount + "_c_" + customerCount + "_i_" + itemCount + ".data";
 //        String file = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databasesV3/w_" + warehouseCount + "_d_" + districtCount + "_c_" + customerCount + "_i_" + itemCount + ".data";
-        TpccDataPartitionerV3 app = new TpccDataPartitionerV3(file, warehouseCount);
+        TpccDataPerfectPartitionerV3 app = new TpccDataPerfectPartitionerV3(file, warehouseCount);
         app.split();
     }
 
@@ -95,13 +94,13 @@ public class TpccDataPartitionerV3 {
         StringBuilder oracleContent = new StringBuilder();
         String[] tmp1 = this.file.split("/");
         String tmp2 = tmp1[tmp1.length - 1] + ".oracle";
-        tmp1[tmp1.length - 1] = tmp2;
+        tmp1[tmp1.length - 1] = "partitioned/" + tmp2;
         Path oraclePath = Paths.get(String.join("/", tmp1));
         try {
             for (int i = 0; i < numPartition; i++) {
                 String[] fileNamePart = this.file.split("/");
                 String fileoutName = fileNamePart[fileNamePart.length - 1] + "." + i;
-                fileNamePart[fileNamePart.length - 1] = fileoutName;
+                fileNamePart[fileNamePart.length - 1] = "partitioned/" + fileoutName;
                 String filePath = String.join("/", fileNamePart);
                 contents[i] = new StringBuilder();
                 files[i] = Paths.get(filePath);
@@ -161,26 +160,16 @@ public class TpccDataPartitionerV3 {
         String parts[] = objId.getSId().split(":");
         int ret = -1;
         switch (parts[0]) {
-            case "Warehouse":
-
-                ret = Integer.parseInt(parts[1].split("=")[1]) % this.numPartition;
-                break;
             case "Stock":
-//                return TpccConfig.defautDistrictForStock % this.numPartition;
-//                System.out.println(parts[0] + " - " + objId);
-//                ret = mapStockToDistrict(objId.sId) % this.numPartition;
-                ret = (mapStockToDistrict(objId.sId) + Integer.parseInt(parts[1].split("=")[1])) % this.numPartition;
-                break;
             case "District":
             case "History":
             case "Order":
             case "NewOrder":
             case "OrderLine":
             case "Customer":
-//                ret = Integer.parseInt(parts[2].split("=")[1]) % this.numPartition;
-                ret = (Integer.parseInt(parts[2].split("=")[1]) + Integer.parseInt(parts[1].split("=")[1])) % this.numPartition;
+            case "Warehouse":
+                ret = Integer.parseInt(parts[1].split("=")[1]) % this.numPartition;
                 break;
-//                break;
             case "Item":
                 ret = objId.hashCode() % this.numPartition;
                 break;

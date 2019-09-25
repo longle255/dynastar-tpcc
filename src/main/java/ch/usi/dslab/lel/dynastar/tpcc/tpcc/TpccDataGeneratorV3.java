@@ -38,20 +38,30 @@ public class TpccDataGeneratorV3 {
         System.out.println("Creating dataset for jTPCC. Enter required information");
         Scanner scan = new Scanner(System.in);
         String input;
+//        System.out.print("Number of warehouses:");
+//        input = scan.nextLine();
+//        int warehouseCount = Integer.parseInt(input);
+//        System.out.print("Number of district per warehouse:");
+//        input = scan.nextLine();
+//        int districtCount = Integer.parseInt(input);
+//        System.out.print("Number of customer per district:");
+//        input = scan.nextLine();
+//        int customerCount = Integer.parseInt(input);
+//        System.out.print("Number of item:");
+//        input = scan.nextLine();
+//        int itemCount = Integer.parseInt(input);
+
+
         System.out.print("Number of warehouses:");
         input = scan.nextLine();
         int warehouseCount = Integer.parseInt(input);
-        System.out.print("Number of district per warehouse:");
-        input = scan.nextLine();
-        int districtCount = Integer.parseInt(input);
-        System.out.print("Number of customer per district:");
-        input = scan.nextLine();
-        int customerCount = Integer.parseInt(input);
-        System.out.print("Number of item:");
-        input = scan.nextLine();
-        int itemCount = Integer.parseInt(input);
-//        String filePath = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/";
-        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databasesV3/";
+        int districtCount = 10;
+        int customerCount = 20;
+        int itemCount = 100;
+
+
+        String filePath = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databasesV3/";
+//        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databasesV3/";
 
         TpccConfig.configCustPerDist = customerCount;
         TpccConfig.configItemCount = itemCount;

@@ -1,6 +1,6 @@
 ## LibMCast configuration file
 
-# Specify a group id, an id, an ip address and a port for each node.
+# Specify a groups id, an id, an ip address and a port for each node.
 # GroupIds/Ids must start from 0 and must be unique.
 
 $learners

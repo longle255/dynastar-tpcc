@@ -11,6 +11,7 @@ import ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccRandom;
 import ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil;
 import ch.usi.dslab.lel.dynastarv2.Client;
 import ch.usi.dslab.lel.dynastarv2.Partition;
+import ch.usi.dslab.lel.dynastarv2.PartitionStateMachine;
 import ch.usi.dslab.lel.dynastarv2.command.Command;
 import ch.usi.dslab.lel.dynastarv2.probject.ObjId;
 import ch.usi.dslab.lel.dynastarv2.probject.PRObjectGraph;
@@ -53,7 +54,7 @@ public class TpccClient {
     private TpccRandom rnd;
     private int warehouseCount;
 
-    public TpccClient(int clientId, String systemConfigFile, String partitioningFile, String dataFile, int terminalNum, int transactionNum, int warehouseCount, int wNewOrder, int wPayment, int wDelivery, int wOrderStatus, int wStockLevel, String terminalDistribution) {
+    public TpccClient(int clientId, String systemConfigFile, String partitioningFile, String dataFile, int terminalNum, int transactionNum, int warehouseCount, int wNewOrder, int wPayment, int wDelivery, int wOrderStatus, int wStockLevel, String terminalDistribution, String runningMode) {
         TpccProcedure appProcedure = new TpccProcedure();
         clientProxy = new Client(clientId, systemConfigFile, partitioningFile, appProcedure);
         this.preLoadData(dataFile);
@@ -66,22 +67,22 @@ public class TpccClient {
         int customerNum = Integer.valueOf(fileNameParts[5]);
         int itemNum = Integer.valueOf(fileNameParts[7]);
         TpccConfig.configItemCount = itemNum;
-        TpccConfig.configCustPerDist= customerNum;
+        TpccConfig.configCustPerDist = customerNum;
         if (terminalNum == 0) {
             terminals = new TpccTerminal[1];
-            terminals[0] = new TpccTerminal(clientProxy, "Interactive", 100, warehouseCount, 1, 1, 100, 45, 43, 4, 4, 4, -1, this, new BenchContext.CallbackHandler(this.clientProxy.getId()));
+            terminals[0] = new TpccTerminal(clientProxy, "Interactive", 100, warehouseCount, 1, 1, 100, 45, 43, 4, 4, 4, -1, this, new BenchContext.CallbackHandler(this.clientProxy.getId()), runningMode);
             terminals[0].setLogger(logger);
             this.runInteractive();
         } else {
 
             // for testing
 //            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, "w=1:d=1_w=2:d=1_w=1:d=2_w=2:d=2_w=1:d=3_w=2:d=3_w=1:d=4_w=2:d=4_w=1:d=5_w=2:d=5");
-            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, terminalDistribution);
+            this.runAuto(wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, terminalDistribution, runningMode);
         }
     }
 
     public static void main(String[] args) {
-        if (args.length != 11 && args.length != 17) {//
+        if (args.length != 12 && args.length != 18) {//
             System.out.println("USAGE: AppClient | clientId | systemConfigFile | partitionConfigFile | dataFile | terminalNumber(0 for interactive) | transaction count | wNewOrder | wPayment | wOrderStatus | wDelivery | wStockLevel");
             System.exit(1);
         }
@@ -97,8 +98,9 @@ public class TpccClient {
         int wDelivery = Integer.parseInt(args[index++]);
         int wOrderStatus = Integer.parseInt(args[index++]);
         int wStockLevel = Integer.parseInt(args[index++]);
+        String runningMode = args[index++];
         String terminalDistribution = null;
-        if (args.length == 17) {
+        if (args.length == 18) {
             String gathererNode = args[index++];
             int gathererPort = Integer.parseInt(args[index++]);
             String fileDirectory = args[index++];
@@ -110,7 +112,7 @@ public class TpccClient {
         System.out.println(clientId + " - " + terminalDistribution);
         String[] dataFileParts = dataFile.split("/");
         int warehouseCount = Integer.parseInt(dataFileParts[dataFileParts.length - 1].split("_")[1]);
-        TpccClient appcli = new TpccClient(clientId, systemConfigFile, partitionsConfigFile, dataFile, terminalNumber, transactionNum, warehouseCount, wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, terminalDistribution);
+        TpccClient appcli = new TpccClient(clientId, systemConfigFile, partitionsConfigFile, dataFile, terminalNumber, transactionNum, warehouseCount, wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, terminalDistribution, runningMode);
 //        appcli.preLoadData(dataFile);
 
     }
@@ -124,8 +126,10 @@ public class TpccClient {
         }
         if (hostName.indexOf("node") == 0) {
             redisHost = "192.168.3.45";
-        } else {
+        } else if (hostName.indexOf("Long") == 0) {
             redisHost = "127.0.0.1";
+        } else {
+            redisHost = "172.31.42.68";
         }
         boolean cacheLoaded = false;
         String[] fileNameParts = file.split("/");
@@ -207,7 +211,7 @@ public class TpccClient {
     }
 
 
-    public void runAuto(int iNewOrderWeight, int iPaymentWeight, int iDeliveryWeight, int iOrderStatusWeight, int iStockLevelWeight) {
+    public void runAuto(int iNewOrderWeight, int iPaymentWeight, int iDeliveryWeight, int iOrderStatusWeight, int iStockLevelWeight, String runningMode) {
         terminals = new TpccTerminal[this.terminalNum];
         terminalNames = new String[this.terminalNum];
         terminalsStarted = this.terminalNum;
@@ -233,7 +237,7 @@ public class TpccClient {
 
             TpccTerminal terminal = new TpccTerminal(this.clientProxy, terminalName, i, this.warehouseCount,
                     terminalWarehouseID, terminalDistrictID, transactionNum, iNewOrderWeight, iPaymentWeight, iDeliveryWeight, iOrderStatusWeight, iStockLevelWeight,
-                    -1, this, callbackHandler);
+                    -1, this, callbackHandler, runningMode);
 //            System.out.println("Client " + this.clientProxy.getId() + " starting terminal for warehouse/district " + terminalWarehouseID + "/" + terminalDistrictID);
             terminal.setLogger(logger);
             terminals[i] = terminal;
@@ -253,7 +257,7 @@ public class TpccClient {
 
     }
 
-    public void runAuto(int iNewOrderWeight, int iPaymentWeight, int iDeliveryWeight, int iOrderStatusWeight, int iStockLevelWeight, String terminalDistribution) {
+    public void runAuto(int iNewOrderWeight, int iPaymentWeight, int iDeliveryWeight, int iOrderStatusWeight, int iStockLevelWeight, String terminalDistribution, String runningMode) {
         String[] terminalParts = terminalDistribution.split("_");
         terminals = new TpccTerminal[terminalParts.length];
         terminalNames = new String[terminalParts.length];
@@ -266,7 +270,7 @@ public class TpccClient {
             int terminalDistrictID = Integer.parseInt(terminalDetail[1].split("=")[1]);
             TpccTerminal terminal = new TpccTerminal(this.clientProxy, terminalName, i, this.warehouseCount,
                     terminalWarehouseID, terminalDistrictID, transactionNum, iNewOrderWeight, iPaymentWeight, iDeliveryWeight, iOrderStatusWeight, iStockLevelWeight,
-                    -1, this, callbackHandler);
+                    -1, this, callbackHandler, runningMode);
             System.out.println("Client " + this.clientProxy.getId() + " starting terminal for warehouse/district " + terminalWarehouseID + "/" + terminalDistrictID);
             terminal.setLogger(logger);
             terminals[i] = terminal;

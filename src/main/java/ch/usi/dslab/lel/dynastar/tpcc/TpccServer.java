@@ -75,8 +75,10 @@ public class TpccServer extends PartitionStateMachine {
         }
         if (hostName.indexOf("node") == 0) {
             redisHost = "192.168.3.45";
-        } else {
+        } else if (hostName.indexOf("Long") == 0) {
             redisHost = "127.0.0.1";
+        } else {
+            redisHost = "172.31.42.68";
         }
         boolean cacheLoaded = false;
         long start = System.currentTimeMillis();
@@ -526,7 +528,8 @@ public class TpccServer extends PartitionStateMachine {
                             }
                             ObjId orderObjId = secondaryIndex.get(orderIdKey).iterator().next();
                             Order order = (Order) getObject(orderObjId);
-                            if (order==null) logger.error("cmd {} DELIVERY: Order={} nullll", command.getId(), orderIdKey);
+                            if (order == null)
+                                logger.error("cmd {} DELIVERY: Order={} nullll", command.getId(), orderIdKey);
                             order.o_carrier_id = o_carrier_id;
 
 
@@ -547,7 +550,9 @@ public class TpccServer extends PartitionStateMachine {
                             logger.debug("cmd {} DELIVERY: customerKey={}", command.getId(), customerKey);
                             ObjId customerObjId = secondaryIndex.get(customerKey).iterator().next();
                             Customer customer = (Customer) getObject(customerObjId);
-                            assert customer != null;
+                            if (customer == null) {
+                                return new Message("TRANSACTION_ARBOTED");
+                            }
                             customer.c_balance += total;
                         } else {
                             break;
@@ -580,8 +585,8 @@ public class TpccServer extends PartitionStateMachine {
 //                    System.out.println("found orderLiness" + orderLineObjIds);
 //                        Collections.sort(orderLineObjIds, new TpccProcedure.OrderLineOrderIdComparator());
 //                    log.debug("found sorted orderLiness" + orderLineObjIds);
-                        int i = 0;
-                        while (i < 20 && orderLineObjIds.get(i) != null) {
+                        for (int i = 0; i < orderLineObjIds.size(); i++) {
+
 //                        log.debug("partition {} getting obj {}", getPartitionId(), orderLineObjIds.get(i));
                             OrderLine orderLine = (OrderLine) getObject(orderLineObjIds.get(i));
                             assert orderLine != null;
@@ -604,7 +609,7 @@ public class TpccServer extends PartitionStateMachine {
                             } else {
                                 log.debug("can't find stock for {}", Row.genSId("Stock", terminalWarehouseID, orderLine.ol_i_id));
                             }
-                            i++;
+
                         }
                     }
                     log.debug("cmd {} STOCK_LEVEL: {}", command.getId(), stocks);

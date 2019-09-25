@@ -234,6 +234,10 @@ public class TpccProcedure implements AppProcedure {
                         ret.add(districtObjId);
                         ret.add(warehouseObjId);
                         ret.add(customerObjId);
+//                        int[] supplierWarehouseIds = (int[]) params.get("supplierWarehouseIds");
+//                        for (int id : supplierWarehouseIds) {
+//                            ret.addAll(TpccUtil.getStockDistrictId(id));
+//                        }
                         Set<ObjId> supplierWarehouseObjIds = (Set<ObjId>) params.get("supplierWarehouseObjIds");
                         Set<ObjId> stockDistrictObjIds = TpccUtil.getStockDistrictId((int) params.get("w_id"));
                         Set<ObjId> stockIds = (HashSet) params.get("stockIds");
@@ -326,8 +330,8 @@ public class TpccProcedure implements AppProcedure {
                         ret.add(warehouseObjId);
                         ObjId customerDistrictObjId = (ObjId) params.get("c_d_obj_id");
                         ObjId customerWarehouseObjId = (ObjId) params.get("c_w_obj_id");
-                        ret.add(customerDistrictObjId);
-                        ret.add(customerWarehouseObjId);
+//                        ret.add(customerDistrictObjId);
+//                        ret.add(customerWarehouseObjId);
 
 
                         boolean customerByName = (boolean) params.get("c_by_name");
@@ -656,9 +660,13 @@ public class TpccProcedure implements AppProcedure {
                 }
                 secondaryIndex.put(key, oids);
             }
-            oids.add(objId);
+            try {
+                oids.add(objId);
+            } catch (Exception e) {
+            }
         }
     }
+
 
     public static class OrderIdComparator implements Comparator<ObjId> {
         public int compare(ObjId c1, ObjId c2) {

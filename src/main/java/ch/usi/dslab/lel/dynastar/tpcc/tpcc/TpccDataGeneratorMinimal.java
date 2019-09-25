@@ -18,13 +18,13 @@ import java.util.stream.Stream;
 /**
  * Author: longle, created on 08/04/16.
  */
-public class TpccDataGenerator {
+public class TpccDataGeneratorMinimal {
     int warehouseCount, districtCount, customerCount, itemCount;
     String filePath;
     Random gen = new Random(System.currentTimeMillis());
     AtomicInteger objIdCount = new AtomicInteger(0);
 
-    public TpccDataGenerator(String filePath, int warehouseCount, int districtCount, int customerCount, int itemCount) {
+    public TpccDataGeneratorMinimal(String filePath, int warehouseCount, int districtCount, int customerCount, int itemCount) {
         this.warehouseCount = warehouseCount;
         this.districtCount = districtCount;
         this.customerCount = customerCount;
@@ -40,18 +40,19 @@ public class TpccDataGenerator {
         System.out.print("Number of warehouses:");
         input = scan.nextLine();
         int warehouseCount = Integer.parseInt(input);
-        System.out.print("Number of district per warehouse:");
-        input = scan.nextLine();
-        int districtCount = Integer.parseInt(input);
-        System.out.print("Number of customer per district:");
-        input = scan.nextLine();
-        int customerCount = Integer.parseInt(input);
-        System.out.print("Number of item:");
-        input = scan.nextLine();
-        int itemCount = Integer.parseInt(input);
-        String filePath = "/Users/longle/Documents/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/";
-//        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/";
-        TpccDataGenerator generator = new TpccDataGenerator(filePath, warehouseCount, districtCount, customerCount, itemCount);
+//        System.out.print("Number of district per warehouse:");
+//        input = scan.nextLine();
+//        int districtCount = Integer.parseInt(input);
+//        System.out.print("Number of customer per district:");
+//        input = scan.nextLine();
+//        int customerCount = Integer.parseInt(input);
+//        System.out.print("Number of item:");
+//        input = scan.nextLine();
+//        int itemCount = Integer.parseInt(input);
+//        String filePath = "/Users/longle/Dropbox/Workspace/PhD/ScalableSMR/dynastarTPCC/bin/databases/";
+        String filePath = "/home/long/apps/ScalableSMR/dynastarTPCC/bin/databases/";
+//        TpccDataGeneratorMinimal generator = new TpccDataGeneratorMinimal(filePath, warehouseCount, districtCount, customerCount, itemCount);
+        TpccDataGeneratorMinimal generator = new TpccDataGeneratorMinimal(filePath, warehouseCount, 10, 3000, 100000);
         generator.generateCSVData();
     }
 
@@ -246,11 +247,11 @@ public class TpccDataGenerator {
             // random within [0.0000 .. 0.2000]
             warehouse.w_tax = (float) ((TpccUtil.randomNumber(0, 2000, gen)) / 10000.0);
 
-            warehouse.w_name = TpccUtil.randomStr(TpccUtil.randomNumber(6, 10, gen));
-            warehouse.w_street_1 = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-            warehouse.w_street_2 = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-            warehouse.w_city = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-            warehouse.w_state = TpccUtil.randomStr(3).toUpperCase();
+            warehouse.w_name = TpccUtil.randomStr(2);
+            warehouse.w_street_1 = TpccUtil.randomStr(2);
+            warehouse.w_street_2 = TpccUtil.randomStr(2);
+            warehouse.w_city = TpccUtil.randomStr(2);
+            warehouse.w_state = TpccUtil.randomStr(2).toUpperCase();
             warehouse.w_zip = 123456;
             warehouses.add(warehouse);
         }
@@ -273,7 +274,7 @@ public class TpccDataGenerator {
 //            ObjId oid1 = Row.genObjId(Row.MODEL.ITEM, new String[]{"i_id", String.valueOf(i)});
             Item item = new Item(i);
             item.setId(new ObjId(objIdCount.getAndIncrement()));
-            item.i_name = TpccUtil.randomStr(TpccUtil.randomNumber(14, 24, gen));
+            item.i_name = TpccUtil.randomStr(2);
             item.i_price = (float) (TpccUtil.randomNumber(100, 10000, gen) / 100.0);
 
             // i_data
@@ -281,7 +282,7 @@ public class TpccDataGenerator {
             len = TpccUtil.randomNumber(26, 50, gen);
             if (randPct > 10) {
                 // 90% of time i_data isa random string of length [26 .. 50]
-                item.i_data = TpccUtil.randomStr(len);
+                item.i_data = TpccUtil.randomStr(2);
             } else {
                 // 10% of time i_data has "ORIGINAL" crammed somewhere in middle
                 startORIGINAL = TpccUtil.randomNumber(2, (len - 8), gen);
@@ -324,23 +325,23 @@ public class TpccDataGenerator {
                 len = TpccUtil.randomNumber(26, 50, gen);
                 if (randPct > 10) {
                     // 90% of time i_data isa random string of length [26 .. 50]
-                    stock.s_data = TpccUtil.randomStr(len);
+                    stock.s_data = TpccUtil.randomStr(2);
                 } else {
                     // 10% of time i_data has "ORIGINAL" crammed somewhere in middle
                     startORIGINAL = TpccUtil.randomNumber(2, (len - 8), gen);
-                    stock.s_data = TpccUtil.randomStr(startORIGINAL - 1) + "ORIGINAL" + TpccUtil.randomStr(len - startORIGINAL - 9);
+                    stock.s_data = TpccUtil.randomStr(2) + "ORIGINAL" + TpccUtil.randomStr(2);
                 }
 
-                stock.s_dist_01 = TpccUtil.randomStr(24);
-                stock.s_dist_02 = TpccUtil.randomStr(24);
-                stock.s_dist_03 = TpccUtil.randomStr(24);
-                stock.s_dist_04 = TpccUtil.randomStr(24);
-                stock.s_dist_05 = TpccUtil.randomStr(24);
-                stock.s_dist_06 = TpccUtil.randomStr(24);
-                stock.s_dist_07 = TpccUtil.randomStr(24);
-                stock.s_dist_08 = TpccUtil.randomStr(24);
-                stock.s_dist_09 = TpccUtil.randomStr(24);
-                stock.s_dist_10 = TpccUtil.randomStr(24);
+                stock.s_dist_01 = TpccUtil.randomStr(2);
+                stock.s_dist_02 = TpccUtil.randomStr(2);
+                stock.s_dist_03 = TpccUtil.randomStr(2);
+                stock.s_dist_04 = TpccUtil.randomStr(2);
+                stock.s_dist_05 = TpccUtil.randomStr(2);
+                stock.s_dist_06 = TpccUtil.randomStr(2);
+                stock.s_dist_07 = TpccUtil.randomStr(2);
+                stock.s_dist_08 = TpccUtil.randomStr(2);
+                stock.s_dist_09 = TpccUtil.randomStr(2);
+                stock.s_dist_10 = TpccUtil.randomStr(2);
 
                 stocks.add(stock);
             } // end for [w]
@@ -370,11 +371,11 @@ public class TpccDataGenerator {
                 district.d_tax = (float) ((TpccUtil.randomNumber(0, 2000, gen)) / 10000.0);
 
                 district.d_next_o_id = customerCount + 1;
-                district.d_name = TpccUtil.randomStr(TpccUtil.randomNumber(6, 10, gen));
-                district.d_street_1 = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-                district.d_street_2 = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-                district.d_city = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-                district.d_state = TpccUtil.randomStr(3).toUpperCase();
+                district.d_name = TpccUtil.randomStr(2);
+                district.d_street_1 = TpccUtil.randomStr(2);
+                district.d_street_2 = TpccUtil.randomStr(2);
+                district.d_city = TpccUtil.randomStr(2);
+                district.d_state = TpccUtil.randomStr(2).toUpperCase();
                 district.d_zip = 12345678;
 
                 districts.add(district);
@@ -413,7 +414,7 @@ public class TpccDataGenerator {
                     }
 
                     customer.c_last = c_last;
-                    customer.c_first = TpccUtil.randomStr(TpccUtil.randomNumber(8, 16, gen));
+                    customer.c_first = TpccUtil.randomStr(2);
                     customer.c_credit_lim = 50000;
 
                     customer.c_balance = -10;
@@ -421,17 +422,17 @@ public class TpccDataGenerator {
                     customer.c_payment_cnt = 1;
                     customer.c_delivery_cnt = 0;
 
-                    customer.c_street_1 = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-                    customer.c_street_2 = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-                    customer.c_city = TpccUtil.randomStr(TpccUtil.randomNumber(10, 20, gen));
-                    customer.c_state = TpccUtil.randomStr(3).toUpperCase();
+                    customer.c_street_1 = TpccUtil.randomStr(2);
+                    customer.c_street_2 = TpccUtil.randomStr(2);
+                    customer.c_state = TpccUtil.randomStr(2).toUpperCase();
+                    customer.c_city = TpccUtil.randomStr(2);
                     customer.c_zip = 123456789;
 
                     customer.c_phone = "(732)744-1700";
 
                     customer.c_since = sysdate;
                     customer.c_middle = "OE";
-                    customer.c_data = TpccUtil.randomStr(TpccUtil.randomNumber(300, 500, gen));
+                    customer.c_data = TpccUtil.randomStr(2);
 
 //                    ObjId oidHist = Row.genObjId(Row.MODEL.HISTORY, new String[]{"h_c_id", String.valueOf(c), "h_c_d_id", String.valueOf(d), "h_c_w_id", String.valueOf(w)});
                     History history = new History(c, d, w);
@@ -440,7 +441,7 @@ public class TpccDataGenerator {
                     history.h_w_id = w;
                     history.h_date = sysdate;
                     history.h_amount = 10;
-                    history.h_data = TpccUtil.randomStr(TpccUtil.randomNumber(10, 24, gen));
+                    history.h_data = TpccUtil.randomStr(2);
 
                     customers.add(customer);
                     orderHistories.add(history);
@@ -542,7 +543,7 @@ public class TpccDataGenerator {
 
                                 order_line.ol_supply_w_id = TpccUtil.randomNumber(1, warehouseCount, gen);
                                 order_line.ol_quantity = 5;
-                                order_line.ol_dist_info = TpccUtil.randomStr(24);
+                                order_line.ol_dist_info = TpccUtil.randomStr(2);
                                 orderLines.add(order_line);
                             } // end for [l]
                         }

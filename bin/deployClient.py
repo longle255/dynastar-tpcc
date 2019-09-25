@@ -15,6 +15,7 @@ wPayment = common.iarg(4)
 wDelivery = common.iarg(5)
 wOrderStatus = common.iarg(6)
 wStockLevel = common.iarg(7)
+mod = common.sarg(8)
 
 if common.ENV_CLUSTER:
     system_config_file = common.script_dir() + "/systemConfigs/clusterSysConfig.json"
@@ -31,7 +32,7 @@ num_permits = "1"
 # client_cmd = java_bin + app_classpath + client_class + client_id + config_file + partitioning_file + num_permits
 client_cmd = [common.getJavaExec(hostname, 'CLIENT'), common.JAVA_CLASSPATH, common.TPCC_CLASS_CLIENT, client_id, system_config_file,
               partitioning_file, data_file, terminal_num, 5000, wNewOrder, wPayment, wDelivery, wOrderStatus,
-              wStockLevel]
+              wStockLevel, mod]
 cmdString = " ".join([str(val) for val in client_cmd])
 print cmdString
 os.system(cmdString)

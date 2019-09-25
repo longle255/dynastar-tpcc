@@ -77,7 +77,7 @@ public class TpccUtil extends TpccConfig {
 
     public static String getLastName(Random r) {
         if (configCustPerDist != 3000) {
-            int num = (int) nonUniformRandom(1, 5, 5, r);
+            int num = (int) nonUniformRandom(255, 0, 399, r);
             return CUSTOMER_NAMES_MINIMAL[num];
         }
 
@@ -103,27 +103,62 @@ public class TpccUtil extends TpccConfig {
     }
 
 
+    // this is for dynastar, use the one below for ssmr
+//    public static int mapIdToPartition(ObjId objId) {
+//        if (objId.getSId() == null) return objId.hashCode() % Partition.getPartitionList().size();
+//        String parts[] = objId.getSId().split(":");
+//        int ret = -1;
+//        switch (parts[0]) {
+//            case "Warehouse":
+//
+//                ret = Integer.parseInt(parts[1].split("=")[1]) % Partition.getPartitionList().size();
+//                break;
+//            case "Stock":
+//                ret = (mapStockToDistrict(objId.sId) + Integer.parseInt(parts[1].split("=")[1])) % Partition.getPartitionList().size();
+//                break;
+//            case "District":
+//            case "History":
+//            case "Order":
+//            case "NewOrder":
+//            case "OrderLine":
+//            case "Customer":
+//                ret = (Integer.parseInt(parts[2].split("=")[1]) + Integer.parseInt(parts[1].split("=")[1])) % Partition.getPartitionList().size();
+//                break;
+//            case "Item":
+//                ret = objId.hashCode() % Partition.getPartitionList().size();
+//                break;
+//            default:
+//                ret = 0;
+//                break;
+//        }
+//        return ret;
+//
+//    }
+
+    // this is for ssmr, use the one above for dynastar
     public static int mapIdToPartition(ObjId objId) {
         if (objId.getSId() == null) return objId.hashCode() % Partition.getPartitionList().size();
         String parts[] = objId.getSId().split(":");
+        int ret = -1;
         switch (parts[0]) {
-            case "Warehouse":
-                return Integer.parseInt(parts[1].split("=")[1]) % Partition.getPartitionList().size();
             case "Stock":
-//                return TpccConfig.defautDistrictForStock % Partition.getPartitionList().size();
-                return mapStockToDistrict(objId.sId) % Partition.getPartitionList().size();
             case "District":
-            case "Customer":
             case "History":
             case "Order":
             case "NewOrder":
             case "OrderLine":
-                return Integer.parseInt(parts[2].split("=")[1]) % Partition.getPartitionList().size();
+            case "Customer":
+            case "Warehouse":
+                ret = Integer.parseInt(parts[1].split("=")[1]) % Partition.getPartitionList().size();
+                break;
             case "Item":
-                return objId.hashCode() % Partition.getPartitionList().size();
+                ret = objId.hashCode() % Partition.getPartitionList().size();
+                break;
             default:
-                return 0;
+                ret = 0;
+                break;
         }
+        return ret;
 
     }
 
@@ -198,7 +233,7 @@ public class TpccUtil extends TpccConfig {
         String parts[] = sId.split(":");
         if (!parts[0].equals("Stock")) {
             System.out.println(sId + "is not a stock level");
-            System.exit(-1);
+//            System.exit(-1);
         }
         int i_id = Integer.parseInt(parts[2].split("=")[1]);
         return i_id % TpccConfig.configDistPerWhse + 1;

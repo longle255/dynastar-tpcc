@@ -70,7 +70,7 @@ if common.ENV_EC2:
     # need to sync this sysConfig with other instances
     print "Syncing config file"
     os.system(
-        "/home/ubuntu/apps/ScalableSMR/bin/aws/control-sync-code.sh /home/ubuntu/apps/ScalableSMR/chirperV2/bin/systemConfigs")
+        "/home/ubuntu/apps/ScalableSMR/bin/aws/control-sync-code.sh /home/ubuntu/apps/ScalableSMR/dynastarTPCC/bin/systemConfigs")
     time.sleep(5)
 
 serverList = sysConfig["server_list"]
@@ -147,7 +147,7 @@ print 'Deploying clients'
 
 clientCmdPieces = [common.tpccClientDeployer, sysConfigFile, partitioningFile,
                    numPartitions, numClients, minClientId, data_file, wNewOrder,
-                   wPayment, wDelivery, wOrderStatus , wStockLevel]
+                   wPayment, wDelivery, wOrderStatus , wStockLevel, runningMode]
 
 clientCmdString = " ".join([str(val) for val in clientCmdPieces])
 common.localcmd(clientCmdString)

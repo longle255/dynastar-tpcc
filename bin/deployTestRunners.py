@@ -23,7 +23,7 @@ def usage():
 
 
 # print sys.argv, len(sys.argv)
-if len(sys.argv) not in [12]:
+if len(sys.argv) not in [13]:
     usage()
 
 # constants
@@ -47,7 +47,8 @@ wDelivery = iarg(9)
 wOrderStatus = iarg(10)
 wStockLevel = iarg(11)
 
-algargs = []
+runningMode = sarg(12)
+
 gathererNode = systemConfigurer.getGathererNode()
 
 clientNodes = None
@@ -57,7 +58,6 @@ clientNodes = systemConfigurer.getClientNodes(numPartitions, numOracle)
 
 clientId = minCientId
 numPermits = 10
-algargs = [clientId, configFile, partsFile, numPermits]
 
 NUM_TRANS = -1  # unlimited
 # ============================================
@@ -105,13 +105,11 @@ for mapping in clientMapping:
     commonargs = [common.getJavaExec(mapping[NODE], 'CLIENT'), common.JAVA_CLASSPATH,
                   '-DHOSTNAME=' + str(clientId), common.TPCC_CLASS_CLIENT, ]
     commonargs += [clientId, configFile, partsFile, dataFile + '.oracle', numPermits, NUM_TRANS]
-    commonargs += [wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel]
+    commonargs += [wNewOrder, wPayment, wDelivery, wOrderStatus, wStockLevel, runningMode]
     commonargs += [gathererNode, common.gathererPort, logDir, common.EXPERIMENT_DURATION,
                    common.EXPERIMENT_WARMUP_MS, clientDistrict[clientId - minCientId - 1]]
 
-    # algargs[0] = str(clientId)
-    # algargs[3] = str(numPermits)
     cmdString = " ".join([str(val) for val in (commonargs)])
-    print cmdString
+    print mapping[NODE], cmdString
     common.sshcmdbg(mapping[NODE], cmdString)
     clientId += 1

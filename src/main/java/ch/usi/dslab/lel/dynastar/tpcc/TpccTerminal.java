@@ -6,6 +6,7 @@ import ch.usi.dslab.lel.dynastar.tpcc.tables.Warehouse;
 import ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccConfig;
 import ch.usi.dslab.lel.dynastar.tpcc.tpcc.TpccUtil;
 import ch.usi.dslab.lel.dynastarv2.Client;
+import ch.usi.dslab.lel.dynastarv2.PartitionStateMachine;
 import ch.usi.dslab.lel.dynastarv2.command.Command;
 import ch.usi.dslab.lel.dynastarv2.probject.ObjId;
 import org.slf4j.Logger;
@@ -29,10 +30,11 @@ public class TpccTerminal implements Runnable {
 
     private Semaphore sendPermits;
     private BenchContext.CallbackHandler callbackHandler;
-    private boolean goodToGo = false;
+    private boolean goodToGo = true;
+    private boolean isSSMRMode = false;
 
     public TpccTerminal(Client clientProxy, String terminalName, int terminalId, int warehouseCount, int warehouseId, int districtId, int numTransactions, int newOrderWeight, int paymentWeight, int deliveryWeight,
-                        int orderStatusWeight, int stockLevelWeight, int limPerMin_Terminal, TpccClient parent, BenchContext.CallbackHandler callbackHandler) {
+                        int orderStatusWeight, int stockLevelWeight, int limPerMin_Terminal, TpccClient parent, BenchContext.CallbackHandler callbackHandler, String runningMode) {
         this.terminalId = terminalId;
         this.warehouseCount = warehouseCount;
         this.terminalWarehouseID = warehouseId;
@@ -50,6 +52,7 @@ public class TpccTerminal implements Runnable {
         this.parent = parent;
         this.gen = new Random(System.nanoTime());
         this.callbackHandler = callbackHandler;
+        if (runningMode.equals(PartitionStateMachine.RUNNING_MODE_SSMR)) this.isSSMRMode = true;
         sendPermits = new Semaphore(1);
     }
 
@@ -125,7 +128,10 @@ public class TpccTerminal implements Runnable {
         params.put("supplierWarehouseObjIds", supplierWarehouseObjIds);
         params.put("orderQuantities", orderQuantities);
         Command cmd = new Command(TpccCommandType.NEW_ORDER, params);
-        clientProxy.executeCommand(cmd).thenAccept(then);
+        if (isSSMRMode)
+            clientProxy.executeSSMRCommand(cmd).thenAccept(then);
+        else
+            clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
     public void doPayment(Consumer then) {
@@ -177,7 +183,10 @@ public class TpccTerminal implements Runnable {
         params.put("amount", paymentAmount);
 
         Command cmd = new Command(TpccCommandType.PAYMENT, params);
-        clientProxy.executeCommand(cmd).thenAccept(then);
+        if (isSSMRMode)
+            clientProxy.executeSSMRCommand(cmd).thenAccept(then);
+        else
+            clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
     public void doOrderStatus(Consumer then) {
@@ -212,7 +221,10 @@ public class TpccTerminal implements Runnable {
 
         Command cmd = new Command(TpccCommandType.ORDER_STATUS, params);
         int preferredPartitionId = clientProxy.getCache().getNode(districtObjId) != null ? clientProxy.getCache().getNode(districtObjId).getPartitionId() : -1;
-        clientProxy.executeCommand(cmd, preferredPartitionId).thenAccept(then);
+        if (isSSMRMode)
+            clientProxy.executeSSMRCommand(cmd).thenAccept(then);
+        else
+            clientProxy.executeCommand(cmd, preferredPartitionId).thenAccept(then);
     }
 
     public void doDelivery(Consumer then) {
@@ -229,7 +241,10 @@ public class TpccTerminal implements Runnable {
         params.put("d_obj_ids", districtObjIds);
         params.put("o_carrier_id", orderCarrierID);
         Command cmd = new Command(TpccCommandType.DELIVERY, params);
-        clientProxy.executeCommand(cmd).thenAccept(then);
+        if (isSSMRMode)
+            clientProxy.executeSSMRCommand(cmd).thenAccept(then);
+        else
+            clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
 
@@ -248,7 +263,10 @@ public class TpccTerminal implements Runnable {
         stockDistrictObjIds.forEach(objId -> objId.includeDependencies = true);
         params.put("s_d_obj_ids", stockDistrictObjIds);
         Command cmd = new Command(TpccCommandType.STOCK_LEVEL, params);
-        clientProxy.executeCommand(cmd).thenAccept(then);
+        if (isSSMRMode)
+            clientProxy.executeSSMRCommand(cmd).thenAccept(then);
+        else
+            clientProxy.executeCommand(cmd).thenAccept(then);
     }
 
     void getPermit() {
@@ -284,19 +302,19 @@ public class TpccTerminal implements Runnable {
                 doNewOrder(tmpAccept);
                 newOrderCounter++;
                 newOrder = 1;
-            } else if (transactionType <= newOrderWeight + stockLevelWeight && goodToGo) {
+            } else if (transactionType <= newOrderWeight + stockLevelWeight && goodToGo && TpccUtil.randomNumber(1, 100, gen) < 5) {
                 transactionTypeName = "Stock-Level";
 //                System.out.println("Doing "+transactionTypeName);
                 BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.STOCK_LEVEL);
                 Consumer tmpAccept = o -> callbackHandler.accept(o, context);
                 doStockLevel(tmpAccept);
-            } else if (transactionType <= newOrderWeight + stockLevelWeight + orderStatusWeight  && goodToGo) {
+            } else if (transactionType <= newOrderWeight + stockLevelWeight + orderStatusWeight && goodToGo && TpccUtil.randomNumber(1, 100, gen) < 5) {
                 transactionTypeName = "Order-Status";
 //                System.out.println("Doing "+transactionTypeName);
                 BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.ORDER_STATUS);
                 Consumer tmpAccept = o -> callbackHandler.accept(o, context);
                 doOrderStatus(tmpAccept);
-            } else if (transactionType <= newOrderWeight + stockLevelWeight + orderStatusWeight + deliveryWeight && goodToGo) {
+            } else if (transactionType <= newOrderWeight + stockLevelWeight + orderStatusWeight + deliveryWeight && goodToGo && TpccUtil.randomNumber(1, 100, gen) < 5) {
                 BenchContext.CallbackContext context = new BenchContext.CallbackContext(this, TpccCommandType.DELIVERY);
                 Consumer tmpAccept = o -> callbackHandler.accept(o, context);
                 transactionTypeName = "Delivery";

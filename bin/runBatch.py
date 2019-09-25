@@ -15,17 +15,19 @@ data_file_template = common.BIN_HOME + "/databasesNoC/w_{}_d_10_c_3000_i_100000.
 data_file_template = common.BIN_HOME + "/databases/w_16_d_10_c_20_i_100.data"
 # data_file_template = common.BIN_HOME + "/databasesV3/w_{}_d_10_c_3000_i_100000.data"
 data_file_template = common.BIN_HOME + "/databasesV3/w_{}_d_10_c_20_i_100.data"
+# data_file_template = common.BIN_HOME + "/databasesV3/w_{}_d_10_c_300_i_10000.data"
+data_file_template = common.BIN_HOME + "/databasesV3/partitioned/w_{}_d_10_c_20_i_100.data"
 
 preloadData = "True"
 
 partitionings = [2, 4, 8]
-partitionings = [1, 2, 4, 8]
 partitionings = [2, 4, 8]
 partitionings = [16]
 partitionings = [4, 8, 16]
-partitionings = [2, 4, 8, 16]
-partitionings = [2, 4, 8, 16, 32]
+partitionings = [1]
 partitionings = [32]
+partitionings = [1, 2, 4, 8, 16, 32]
+partitionings = [2,4,8,16]
 
 runCount = 1
 
@@ -42,7 +44,7 @@ workloads = {
     # "P_D_SL": {"wNO":0, "wP":50, "wD":50, "wOS":0, "wSL":50},
     # "D_OS_SL": {"wNO":0, "wP":0, "wD":50, "wOS":50, "wSL":50},
     # "NO_D_OS_SL": {"wNO":45, "wP":0, "wD":4, "wOS":4, "wSL":4},
-    # "pureNO": {"wNO": 100, "wP": 0, "wD": 0, "wOS": 0, "wSL": 0},
+    "pureNO": {"wNO": 100, "wP": 0, "wD": 0, "wOS": 0, "wSL": 0},
     # "pureP": {"wNO": 0, "wP": 100, "wD": 0, "wOS": 0, "wSL": 0},
     # "NO_P": {"wNO":50, "wP":50, "wD":0, "wOS":0, "wSL":0},
     # "pureD": {"wNO": 0, "wP": 0, "wD": 100, "wOS": 0, "wSL": 0},
@@ -50,8 +52,8 @@ workloads = {
     # "pureSL": {"wNO":0, "wP":0, "wD":0, "wOS":0, "wSL":100},
 }
 
-MODES = [common.RUNNING_MODE_SSMR]
 MODES = [common.RUNNING_MODE_DYNASTAR]
+MODES = [common.RUNNING_MODE_SSMR]
 
 
 def run():
@@ -59,7 +61,7 @@ def run():
         for mode in MODES:
             for numPartitions in partitionings:
                 data_file = data_file_template.format(numPartitions)
-                if not file_exists(data_file):
+                if not file_exists(data_file+'.oracle'):
                     print('Data File doesn\'t exist ' + data_file)
                     sys.exit(1)
 
